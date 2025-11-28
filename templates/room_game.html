@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Room Game</title>
+<style>
+body { 
+    margin: 0; 
+    font-family: 'Dokdo', sans-serif; 
+    background: #1E1E2F; 
+    color: white; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    flex-direction: column; 
+    text-align: center; 
+}
+.container { 
+    text-align: center; 
+}
+h1 { font-size: 48px; margin-bottom: 1rem; }
+h2 { font-size: 32px; margin-bottom: 2rem; }
+#users-list { font-size: 24px; margin-bottom: 1rem; }
+#users-ul { list-style: none; padding: 0; font-size: 20px; }
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 32px;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+}
+</style>
+</head>
+<body>
+
+<div class="back-btn" onclick="window.location.href='/'">← Back</div>
+
+<div class="container">
+  <h1>Room Code: {{ room_code }}</h1>
+  <h2>Welcome, {{ username }}!</h2>
+  <div id="users-list">Players in this room:</div>
+  <ul id="users-ul"></ul>
+</div>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+const socket = io();
+const roomCode = "{{ room_code }}";
+const username = "{{ username }}";
+
+// Join room
+socket.emit('join', { room_code: roomCode, username: username });
+
+// Track users
+let users = [username];
+const usersUl = document.getElementById('users-ul');
+function renderUsers() {
+    usersUl.innerHTML = '';
+    users.forEach(u => {
+        const li = document.createElement('li');
+        li.textContent = u;
+        usersUl.appendChild(li);
+    });
+}
+renderUsers();
+
+socket.on('user-joined', (data) => {
+    if(!users.includes(data.username)) users.push(data.username);
+    renderUsers();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess the Student</title>
+<link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Dokdo', cursive;
+  background: #1E1E2F;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100vh;
+}
+
+.main-container {
+  width: 1200px;
+  margin-top: 2rem;
+}
+
+/* Title */
+.title {
+  text-align: center;
+  color: #E5E7EB;
+  font-size: 80px;
+  font-family: 'Dokdo', cursive;
+  margin-bottom: 2rem;
+}
+
+/* Layout */
+.content {
+  display: flex;
+  gap: 3rem;
+}
+
+/* Cards */
+.cards-section {
+  flex: 2;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1rem;
+  justify-items: center;
+}
+
+.card {
+  width: 120px;
+  height: 160px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-family: 'Bungee Inline', cursive;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.card img {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 5px;
+}
+
+.card-color-1 { background: #DE7E4A; }
+.card-color-2 { background: #60A5FA; }
+.card-color-3 { background: #FACC15; }
+.card-color-4 { background: #F87171; }
+.card-color-5 { background: #10B981; }
+
+/* Buttons */
+.buttons-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.button {
+  border-radius: 10px;
+  color: white;
+  font-family: 'Bungee Inline', cursive;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* Different button sizes */
+#start-btn { 
+  width: 220px; 
+  padding: 1rem;
+  font-size: 1.8rem; 
+  background: #10B981; 
+}
+#howto-btn { 
+  width: 180px; 
+  padding: 0.8rem;
+  font-size: 1.4rem; 
+  background: #60A5FA; 
+}
+#settings-btn { 
+  width: 140px; 
+  padding: 0.6rem;
+  font-size: 1.2rem; 
+  background: #F87171; 
+}
+
+/* Messages */
+#messages {
+  margin-top: 2rem;
+  color: white;
+  font-size: 1.2rem;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #2C2C3C;
+  padding: 2rem;
+  border-radius: 20px;
+  width: 400px;
+  text-align: center;
+  color: white;
+  font-family: 'Bungee Inline', cursive;
+}
+
+.modal input {
+  padding: 0.5rem;
+  width: 80%;
+  margin: 1rem 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 1rem;
+}
+
+.modal button {
+  padding: 0.8rem 2rem;
+  border-radius: 10px;
+  border: none;
+  background: #10B981;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="title">GUESS THE STUDENT</div>
+  <div class="content">
+    <!-- Cards -->
+    <div class="cards-section">
+      <div class="card card-color-1" data-name="Alice"><img src="https://placehold.co/100x100">Alice</div>
+      <div class="card card-color-2" data-name="Bob"><img src="https://placehold.co/100x100">Bob</div>
+      <div class="card card-color-3" data-name="Charlie"><img src="https://placehold.co/100x100">Charlie</div>
+      <div class="card card-color-4" data-name="Diana"><img src="https://placehold.co/100x100">Diana</div>
+      <div class="card card-color-5" data-name="Eve"><img src="https://placehold.co/100x100">Eve</div>
+      <div class="card card-color-1" data-name="Frank"><img src="https://placehold.co/100x100">Frank</div>
+      <div class="card card-color-2" data-name="Grace"><img src="https://placehold.co/100x100">Grace</div>
+      <div class="card card-color-3" data-name="Hank"><img src="https://placehold.co/100x100">Hank</div>
+      <div class="card card-color-4" data-name="Ivy"><img src="https://placehold.co/100x100">Ivy</div>
+      <div class="card card-color-5" data-name="Jack"><img src="https://placehold.co/100x100">Jack</div>
+      <div class="card card-color-1" data-name="Kate"><img src="https://placehold.co/100x100">Kate</div>
+      <div class="card card-color-2" data-name="Leo"><img src="https://placehold.co/100x100">Leo</div>
+      <div class="card card-color-3" data-name="Mia"><img src="https://placehold.co/100x100">Mia</div>
+      <div class="card card-color-4" data-name="Nina"><img src="https://placehold.co/100x100">Nina</div>
+      <div class="card card-color-5" data-name="Oscar"><img src="https://placehold.co/100x100">Oscar</div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="buttons-section">
+      <div id="start-btn" class="button">Start Game</div>
+      <div id="howto-btn" class="button">How to Play</div>
+      <div id="settings-btn" class="button">Settings</div>
+      <div id="messages"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Username Modal -->
+<div id="username-modal" class="modal">
+  <div class="modal-content">
+    <h2>Enter Your Name</h2>
+    <input type="text" id="username-input" placeholder="Your name">
+    <br>
+    <button id="username-submit">Join Game</button>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+const socket = io();
+
+// Show modal when clicking start
+document.getElementById("start-btn").addEventListener("click", () => {
+    document.getElementById("username-modal").style.display = "flex";
+});
+
+// Submit username and redirect to room
+document.getElementById("username-submit").addEventListener("click", () => {
+    const username = document.getElementById("username-input").value.trim();
+    if(username) {
+        // Redirect to room page with username in query string
+        window.location.href = `/room?username=${encodeURIComponent(username)}`;
+    }
+});
+
+// How to Play
+document.getElementById("howto-btn").addEventListener("click", () => {
+    alert("Click on a card to guess the student.");
+});
+
+// Settings placeholder
+document.getElementById("settings-btn").addEventListener("click", () => {
+    alert("Settings not implemented yet.");
+});
+</script>
+
+</body>
+</html>
+

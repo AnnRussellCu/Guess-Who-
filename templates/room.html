@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create / Join Room</title>
+<style>
+  body {
+    margin: 0;
+    background: #1E1E2F;
+    font-family: 'Dokdo', sans-serif;
+    color: white;
+  }
+
+  .overlay {
+    width: 831px;
+    height: 554px;
+    position: absolute;
+    left: 122px;
+    top: 165px;
+    background: rgba(217, 217, 217, 0.10);
+    border-radius: 20px;
+    border: 3px #9CA3AF solid;
+  }
+
+  .title {
+    width: 601px;
+    text-align: center;
+    position: absolute;
+    left: 237px;
+    top: 395px;
+    font-size: 48px;
+    font-family: Dokdo;
+  }
+
+  .back {
+    position: absolute;
+    left: 56px;
+    top: 27px;
+    font-size: 32px;
+    cursor: pointer;
+  }
+
+  .button {
+    border-radius: 10px;
+    font-family: 'Bungee Inline';
+    font-size: 32px;
+    font-weight: 400;
+    cursor: pointer;
+    text-align: center;
+    line-height: 55px;
+    position: absolute;
+    width: 275px;
+    height: 55px;
+  }
+
+  .create-room { left: 1031px; top: 321px; background: #10B981; color: white; }
+  .join-room { left: 1031px; top: 446px; background: #60A5FA; color: white; }
+
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background: #1E1E2F;
+    padding: 40px;
+    border-radius: 20px;
+    color: white;
+    text-align: center;
+    width: 400px;
+    font-family: 'Dokdo';
+  }
+
+  .modal-content input {
+    width: 80%;
+    padding: 10px;
+    margin: 20px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .modal-content button {
+    background: #10B981;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    margin: 5px;
+  }
+
+  .players-list {
+    margin-top: 20px;
+    font-size: 20px;
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay"></div>
+<div class="title">Create a new room or join an existing one.</div>
+
+<div class="back" onclick="window.location.href='/'">← Back</div>
+
+<div class="button create-room" onclick="openCreateModal()">Create room</div>
+<div class="button join-room" onclick="openJoinModal()">Join room</div>
+
+<!-- Create Room Modal -->
+<div class="modal" id="createModal">
+  <div class="modal-content">
+    <h2>Create Room</h2>
+    <p>Your room code:</p>
+    <input type="text" id="roomCode" readonly>
+    <div class="players-list" id="playersList"></div>
+    <button onclick="closeCreateModal()">Close</button>
+  </div>
+</div>
+
+<!-- Join Room Modal -->
+<div class="modal" id="joinModal">
+  <div class="modal-content">
+    <h2>Join Room</h2>
+    <p>Enter room code:</p>
+    <input type="text" id="joinCode" placeholder="XXXX">
+    <br>
+    <button onclick="joinRoom()">Join</button>
+    <button onclick="closeJoinModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+const socket = io();
+
+// Username passed from Flask
+const username = "{{ username }}";
+
+// OPEN CREATE ROOM MODAL
+function openCreateModal() {
+    socket.emit('create_room', { username });
+}
+
+// LISTEN FOR ROOM CREATED
+socket.on('room_created', (roomCode) => {
+    document.getElementById('roomCode').value = roomCode;
+    document.getElementById('playersList').innerHTML = "<strong>Players:</strong><br>" + username;
+    document.getElementById('createModal').style.display = 'flex';
+});
+
+// CLOSE CREATE ROOM MODAL
+function closeCreateModal() {
+    document.getElementById('createModal').style.display = 'none';
+}
+
+// OPEN / CLOSE JOIN ROOM MODAL
+function openJoinModal() { document.getElementById('joinModal').style.display = 'flex'; }
+function closeJoinModal() { document.getElementById('joinModal').style.display = 'none'; }
+
+// JOIN ROOM
+function joinRoom() {
+    const roomCode = document.getElementById('joinCode').value.toUpperCase();
+    if(!roomCode) return alert("Enter room code");
+    socket.emit('join_room_event', { username, room_code: roomCode });
+}
+
+// HANDLE JOIN RESULT
+socket.on('join_result', (res) => {
+    if(res.success) {
+        alert("Joined room successfully!");
+        closeJoinModal();
+    } else {
+        alert(res.message);
+    }
+});
+
+// UPDATE PLAYER LIST
+socket.on('update_players', (players) => {
+    const listDiv = document.getElementById('playersList');
+    if(listDiv) listDiv.innerHTML = "<strong>Players:</strong><br>" + players.join("<br>");
+});
+</script>
+
+</body>
+</html>
