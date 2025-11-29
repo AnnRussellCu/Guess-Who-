@@ -256,7 +256,7 @@
 
   function startGame() {
     if (!isHost || !currentRoomCode) return;
-    socket.emit('start_game', { room_code: currentRoomCode });
+    socket.emit('start_game', { room_code: currentRoomCode, username });
   }
 
   socket.on('room_created', code => {
@@ -291,7 +291,7 @@
   socket.on('game_started', data => {
     const room = data.room_code;
     const host = data.host;
-    window.location.href = `/play.html?room=${room}&host=${encodeURIComponent(host)}`;
+    window.location.href = `/play.html?room=${room}&username=${encodeURIComponent(host)}`;
   });
 </script>
 </body>
