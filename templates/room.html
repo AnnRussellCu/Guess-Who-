@@ -213,6 +213,7 @@
   const joinMainBtn = document.getElementById('joinMainBtn');
 
   let isHost = false;
+  let currentRoomCode = null;
 
   function disableMainButtons() {
     createMainBtn.classList.add('disabled');
@@ -254,31 +255,29 @@
   }
 
   function startGame() {
-    socket.emit('start_game');
+    if (!isHost || !currentRoomCode) return;
+    socket.emit('start_game', { room_code: currentRoomCode });
   }
 
   socket.on('room_created', code => {
     isHost = true;
+    currentRoomCode = code;
     document.getElementById('roomCodeDisplay').textContent = code;
     playersList.innerHTML = `Player 1_${username} connected.<br>Waiting for player 2...`;
     startBtn.classList.remove('visible');
   });
 
   socket.on('update_players', players => {
-    if (isHost) {
-      if (players.length === 1) {
-        playersList.innerHTML = `Player 1_${players[0]} connected.<br>Waiting for player 2...`;
-        startBtn.classList.remove('visible');
-      } else if (players.length === 2) {
-        playersList.innerHTML = `Player 1_${players[0]} connected.<br>Player 2_${players[1]} connected.`;
-        startBtn.classList.add('visible');
-      }
+    if (isHost && players.length === 2) {
+      playersList.innerHTML = `Player 1_${players[0]} connected.<br>Player 2_${players[1]} connected.`;
+      startBtn.classList.add('visible');
     }
   });
 
   socket.on('join_result', res => {
     if (res.success) {
       isHost = false;
+      currentRoomCode = document.getElementById('joinCodeInput').value.trim().toUpperCase();
       const hostName = res.host || 'Someone';
       joinStatus.textContent = `Joined ${hostName}'s room! Waiting to start...`;
       joinActionBtn.style.display = 'none';
@@ -286,6 +285,13 @@
       joinStatus.textContent = res.message || 'Failed to join room.';
       joinActionBtn.classList.remove('disabled');
     }
+  });
+
+  // This runs on BOTH players when host clicks Start
+  socket.on('game_started', data => {
+    const room = data.room_code;
+    const host = data.host;
+    window.location.href = `/play.html?room=${room}&host=${encodeURIComponent(host)}`;
   });
 </script>
 </body>

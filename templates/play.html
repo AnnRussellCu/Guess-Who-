@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Room Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
 <style>
 body { 
     margin: 0; 
@@ -40,8 +41,8 @@ h2 { font-size: 32px; margin-bottom: 2rem; }
 <div class="back-btn" onclick="window.location.href='/'">← Back</div>
 
 <div class="container">
-  <h1>Room Code: {{ room_code }}</h1>
-  <h2>Welcome, {{ username }}!</h2>
+  <h1>Room Code: <span id="room-code-display">{{ room_code }}</span></h1>
+  <h2>Welcome, <span id="username-display">{{ username }}</span>!</h2>
   <div id="users-list">Players in this room:</div>
   <ul id="users-ul"></ul>
 </div>
@@ -49,8 +50,17 @@ h2 { font-size: 32px; margin-bottom: 2rem; }
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
 const socket = io();
-const roomCode = "{{ room_code }}";
-const username = "{{ username }}";
+
+// Get params from URL (fallback if template vars don't work)
+const urlParams = new URLSearchParams(window.location.search);
+const roomCode = "{{ room_code }}" || urlParams.get('room');
+const username = "{{ username }}" || urlParams.get('username');
+
+// Update display if using URL params
+if (urlParams.get('room')) {
+    document.getElementById('room-code-display').textContent = roomCode;
+    document.getElementById('username-display').textContent = username;
+}
 
 // Join room
 socket.emit('join', { room_code: roomCode, username: username });
