@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Create / Join Room</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="globals.css">
   <link rel="stylesheet" href="style.css">
   <style>
@@ -22,7 +24,6 @@
       position: relative;
     }
 
-    /* Fixed left box */
     .box {
       position: absolute;
       top: calc(50% - 350px);
@@ -44,7 +45,7 @@
       top: calc(50% - 60px);
       left: calc(50% - 302px);
       width: 601px;
-      font-family: "Dokdo-Regular", Helvetica;
+      font-family: 'Dokdo', cursive;
       font-size: 48px;
       text-align: center;
       color: #fff;
@@ -60,7 +61,7 @@
       cursor: pointer;
     }
     .back img { width: 35px; height: 35px; }
-    .back div { font-family: "Bungee Inline-Regular", Helvetica; font-size: 32px; color: #fff; }
+    .back div { font-family: 'Bungee Inline', cursive; font-size: 32px; color: #fff; }
 
     .create-btn, .join-btn {
       position: absolute;
@@ -69,23 +70,46 @@
       border-radius: 10px;
       text-align: center;
       line-height: 55px;
-      font-family: "Bungee Inline-Regular", Helvetica;
+      font-family: 'Bungee Inline', cursive;
       font-size: 32px;
       color: #fff;
       cursor: pointer;
+      transition: all 0.3s;
     }
     .create-btn { top: 325px; left: 1031px; background: #10B981; }
-    .join-btn   { top: 520px; left: 1031px; background: #60A5FA; }
+    .join-btn   { top: 510px; left: 1031px; background: #60A5FA; }
+    .create-btn.disabled, .join-btn.disabled {
+      background: #4B5563 !important;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
     .box-content { display: none; position: absolute; inset: 0; }
     .box-content.active { display: block; }
 
     /* Create room */
     #create-state .code-box { position: absolute; top: 197px; left: 241px; width: 350px; height: 100px; background: #a78bfa; border-radius: 20px; }
-    #create-state .room-code { position: absolute; top: 20px; left: 73px; font-family: "Dokdo-Regular", Helvetica; font-size: 48px; color: #fff; }
+    #create-state .room-code { position: absolute; top: 20px; left: 73px; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
     #create-state .copy-btn { position: absolute; top: 30px; left: 291px; width: 40px; height: 40px; cursor: pointer; }
-    #create-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: "Dokdo-Regular", Helvetica; font-size: 48px; color: #fff; }
-    #create-state .players { position: absolute; top: 420px; left: 107px; width: 617px; text-align: center; font-family: "Dokdo-Regular", Helvetica; font-size: 32px; color: #fff; }
+    #create-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
+    #create-state .players { position: absolute; top: 350px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 32px; color: #fff; line-height: 1.4; }
+    #create-state .start-btn {
+      position: absolute;
+      top: 460px;
+      left: 278px;
+      width: 275px;
+      height: 55px;
+      background: #10B981;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 55px;
+      font-family: 'Bungee Inline', cursive;
+      font-size: 32px;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+    }
+    #create-state .start-btn.visible { display: block; }
 
     /* Join room */
     #join-state input {
@@ -98,13 +122,13 @@
       border: none;
       border-radius: 20px;
       text-align: center;
-      font-family: "Dokdo-Regular", Helvetica;
+      font-family: 'Dokdo', cursive;
       font-size: 48px;
       color: #fff;
       caret-color: #fff;
     }
     #join-state input::placeholder { color: #ffffff99; }
-    #join-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: "Dokdo-Regular", Helvetica; font-size: 48px; color: #fff; }
+    #join-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
     #join-state .join-action {
       position: absolute;
       top: 443px;
@@ -115,10 +139,27 @@
       border-radius: 10px;
       text-align: center;
       line-height: 55px;
-      font-family: "Bungee Inline-Regular", Helvetica;
+      font-family: 'Bungee Inline', cursive;
       font-size: 32px;
       color: #fff;
       cursor: pointer;
+      transition: all 0.3s;
+    }
+    #join-state .join-action.disabled {
+      background: #4B5563;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    #join-state .status {
+      position: absolute;
+      top: 380px;
+      left: 107px;
+      width: 617px;
+      text-align: center;
+      font-family: 'Dokdo', cursive;
+      font-size: 32px;
+      color: #fff;
+      line-height: 1.4;
     }
   </style>
 </head>
@@ -128,6 +169,7 @@
 
   <div class="box">
     <div class="rectangle"></div>
+
     <div class="default-text">Create a new room or join an existing one.</div>
 
     <div id="create-state" class="box-content">
@@ -137,12 +179,14 @@
       </div>
       <div class="msg">Room created! Share the code and invite your friend to play:</div>
       <div class="players" id="playersList">Waiting for players...</div>
+      <div class="start-btn" id="startBtn" onclick="startGame()">Start</div>
     </div>
 
     <div id="join-state" class="box-content">
       <input type="text" id="joinCodeInput" placeholder="Enter code..." maxlength="7">
       <div class="msg">Ask your friend for the code to join their room!</div>
-      <div class="join-action" onclick="joinRoom()">Join</div>
+      <div class="join-action" id="joinActionBtn" onclick="joinRoom()">Join</div>
+      <div class="status" id="joinStatus"></div>
     </div>
   </div>
 
@@ -151,8 +195,8 @@
     <div>back</div>
   </div>
 
-  <div class="create-btn" onclick="showCreate()">Create room</div>
-  <div class="join-btn" onclick="showJoin()">Join room</div>
+  <div class="create-btn" id="createMainBtn" onclick="showCreate()">Create room</div>
+  <div class="join-btn" id="joinMainBtn" onclick="showJoin()">Join room</div>
 
 </div>
 
@@ -160,16 +204,40 @@
 <script>
   const socket = io();
   const username = "{{ username }}";
+  const defaultText = document.querySelector('.default-text');
+  const playersList = document.getElementById('playersList');
+  const startBtn = document.getElementById('startBtn');
+  const joinActionBtn = document.getElementById('joinActionBtn');
+  const joinStatus = document.getElementById('joinStatus');
+  const createMainBtn = document.getElementById('createMainBtn');
+  const joinMainBtn = document.getElementById('joinMainBtn');
+
+  let isHost = false;
+
+  function disableMainButtons() {
+    createMainBtn.classList.add('disabled');
+    joinMainBtn.classList.add('disabled');
+    setTimeout(() => {
+      createMainBtn.classList.remove('disabled');
+      joinMainBtn.classList.remove('disabled');
+    }, 10000);
+  }
 
   function showCreate() {
-    document.querySelectorAll('.box-content').forEach(el => el.classList.remove('active'));
-    document.getElementById('create-state').classList.add('active');
+    if (createMainBtn.classList.contains('disabled')) return;
+    disableMainButtons();
+    defaultText.style.display = 'none';
+    document.querySelectorAll('.box-content').forEach(el => el.style.display = 'none');
+    document.getElementById('create-state').style.display = 'block';
     socket.emit('create_room', { username });
   }
 
   function showJoin() {
-    document.querySelectorAll('.box-content').forEach(el => el.classList.remove('active'));
-    document.getElementById('join-state').classList.add('active');
+    if (joinMainBtn.classList.contains('disabled')) return;
+    disableMainButtons();
+    defaultText.style.display = 'none';
+    document.querySelectorAll('.box-content').forEach(el => el.style.display = 'none');
+    document.getElementById('join-state').style.display = 'block';
     document.getElementById('joinCodeInput').focus();
   }
 
@@ -178,23 +246,46 @@
   }
 
   function joinRoom() {
+    if (joinActionBtn.classList.contains('disabled')) return;
     const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-    if (!code) return alert('Enter room code');
+    if (!code) return;
+    joinActionBtn.classList.add('disabled');
     socket.emit('join_room_event', { username, room_code: code });
   }
 
+  function startGame() {
+    socket.emit('start_game');
+  }
+
   socket.on('room_created', code => {
+    isHost = true;
     document.getElementById('roomCodeDisplay').textContent = code;
-    document.getElementById('playersList').innerHTML = `${username}<br>Waiting for player 2...`;
+    playersList.innerHTML = `Player 1_${username} connected.<br>Waiting for player 2...`;
+    startBtn.classList.remove('visible');
   });
 
   socket.on('update_players', players => {
-    document.getElementById('playersList').innerHTML = players.join('<br>');
+    if (isHost) {
+      if (players.length === 1) {
+        playersList.innerHTML = `Player 1_${players[0]} connected.<br>Waiting for player 2...`;
+        startBtn.classList.remove('visible');
+      } else if (players.length === 2) {
+        playersList.innerHTML = `Player 1_${players[0]} connected.<br>Player 2_${players[1]} connected.`;
+        startBtn.classList.add('visible');
+      }
+    }
   });
 
   socket.on('join_result', res => {
-    alert(res.success ? 'Joined room!' : res.message);
-    if (!res.success) document.getElementById('joinCodeInput').value = '';
+    if (res.success) {
+      isHost = false;
+      const hostName = res.host || 'Someone';
+      joinStatus.textContent = `Joined ${hostName}'s room! Waiting to start...`;
+      joinActionBtn.style.display = 'none';
+    } else {
+      joinStatus.textContent = res.message || 'Failed to join room.';
+      joinActionBtn.classList.remove('disabled');
+    }
   });
 </script>
 </body>
