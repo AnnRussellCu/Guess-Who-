@@ -1,88 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Room Game</title>
-<link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
-<style>
-body { 
-    margin: 0; 
-    font-family: 'Dokdo', sans-serif; 
-    background: #1E1E2F; 
-    color: white; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    height: 100vh; 
-    flex-direction: column; 
-    text-align: center; 
-}
-.container { 
-    text-align: center; 
-}
-h1 { font-size: 48px; margin-bottom: 1rem; }
-h2 { font-size: 32px; margin-bottom: 2rem; }
-#users-list { font-size: 24px; margin-bottom: 1rem; }
-#users-ul { list-style: none; padding: 0; font-size: 20px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess the Student – Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Dokdo', sans-serif;
+      background: #1E1E2F;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 40px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s;
+    }
+    .back-btn:hover { transform: scale(1.2); }
 
-.back-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 32px;
-    color: white;
-    cursor: pointer;
-    user-select: none;
-}
-</style>
+    h1 {
+      font-size: 60px;
+      margin: 1rem 0;
+      color: #a78bfa;
+      text-shadow: 0 0 10px #a78bfa88;
+    }
+    h2 {
+      font-size: 42px;
+      margin: 1rem 0;
+      color: #60A5FA;
+    }
+    .room-info {
+      background: #2d1b69;
+      padding: 1.5rem 3rem;
+      border-radius: 20px;
+      margin: 1.5rem 0;
+      font-size: 32px;
+      box-shadow: 0 0 20px #00000088;
+    }
+    .players-section {
+      margin-top: 3rem;
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 25px;
+      min-width: 400px;
+      box-shadow: 0 0 30px #000000aa;
+    }
+    .players-section h3 {
+      font-size: 40px;
+      margin-bottom: 1.5rem;
+      color: #FACC15;
+    }
+    #playerList {
+      list-style: none;
+      padding: 0;
+    }
+    #playerList li {
+      font-size: 36px;
+      margin: 15px 0;
+      padding: 10px;
+      background: #334155;
+      border-radius: 15px;
+      font-family: 'Bungee Inline', cursive;
+    }
+    #playerList li.you {
+      background: #10B981 !important;
+      color: white;
+      font-weight: bold;
+    }
+    .status {
+      margin-top: 2rem;
+      font-size: 28px;
+      color: #94a3b8;
+    }
+  </style>
 </head>
 <body>
 
-<div class="back-btn" onclick="window.location.href='/'">← Back</div>
+  <div class="back-btn" onclick="window.location.href='/'">Back</div>
 
-<div class="container">
-  <h1>Room Code: <span id="room-code-display">{{ room_code }}</span></h1>
-  <h2>Welcome, <span id="username-display">{{ username }}</span>!</h2>
-  <div id="users-list">Players in this room:</div>
-  <ul id="users-ul"></ul>
-</div>
+  <h1>GUESS THE STUDENT</h1>
+  <div class="room-info">
+    Room Code: <strong id="roomCode">{{ room_code }}</strong>
+  </div>
+  <h2>Welcome, <span id="usernameDisplay">{{ username }}</span>!</h2>
 
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<script>
-const socket = io();
+  <div class="players-section">
+    <h3>Players in Room</h3>
+    <ul id="playerList">
+      <li>Loading players...</li>
+    </ul>
+  </div>
 
-// Get params from URL (fallback if template vars don't work)
-const urlParams = new URLSearchParams(window.location.search);
-const roomCode = "{{ room_code }}" || urlParams.get('room');
-const username = "{{ username }}" || urlParams.get('username');
+  <div class="status" id="status">Waiting for game to begin...</div>
 
-// Update display if using URL params
-if (urlParams.get('room')) {
-    document.getElementById('room-code-display').textContent = roomCode;
-    document.getElementById('username-display').textContent = username;
-}
+  <!-- Use Flask's built-in Socket.IO client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
 
-// Join room
-socket.emit('join', { room_code: roomCode, username: username });
+    // Get data from URL (safe fallback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || "{{ room_code }}";
+    const username = urlParams.get('username') || "{{ username }}";
 
-// Track users
-let users = [username];
-const usersUl = document.getElementById('users-ul');
-function renderUsers() {
-    usersUl.innerHTML = '';
-    users.forEach(u => {
+    // Update display
+    document.getElementById('roomCode').textContent = roomCode;
+    document.getElementById('usernameDisplay').textContent = username;
+
+    // Join the actual game room
+    socket.emit('join_game_room', { room_code: roomCode, username: username });
+
+    const playerList = document.getElementById('playerList');
+    const statusEl = document.getElementById('status');
+
+    socket.on('players_update', (players) => {
+      playerList.innerHTML = '';
+      players.forEach(player => {
         const li = document.createElement('li');
-        li.textContent = u;
-        usersUl.appendChild(li);
+        li.textContent = player;
+        if (player === username) {
+          li.textContent += ' (You)';
+          li.classList.add('you');
+        }
+        playerList.appendChild(li);
+      });
+      if (players.length === 2) {
+        statusEl.textContent = "Both players ready! Game starting soon...";
+      }
     });
-}
-renderUsers();
 
-socket.on('user-joined', (data) => {
-    if(!users.includes(data.username)) users.push(data.username);
-    renderUsers();
-});
-</script>
-
+    socket.on('game_ready', () => {
+      statusEl.textContent = "Game is starting!";
+      statusEl.style.color = "#10B981";
+    });
+  </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <title>Guess the Student</title>
 <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+
 <style>
 body {
   margin: 0;
@@ -19,16 +20,17 @@ body {
 
 .main-container {
   width: 1200px;
-  margin-top: 2rem;
+  margin-top: 3rem;
 }
 
-/* Title */
+/* NEW TITLE STYLE (from your first file but BIGGER) */
 .title {
   text-align: center;
-  color: #E5E7EB;
-  font-size: 80px;
-  font-family: 'Dokdo', cursive;
-  margin-bottom: 2rem;
+  font-family: 'Dokdo', sans-serif;
+  font-size: 90px; /* bigger */
+  margin: 1rem 0 3rem 0;
+  color: #a78bfa;
+  text-shadow: 0 0 20px #a78bfa88; /* bigger glow */
 }
 
 /* Layout */
@@ -93,21 +95,21 @@ body {
 
 /* Different button sizes */
 #start-btn { 
-  width: 220px; 
-  padding: 1rem;
-  font-size: 1.8rem; 
+  width: 240px; 
+  padding: 1.2rem;
+  font-size: 2rem; 
   background: #10B981; 
 }
 #howto-btn { 
-  width: 180px; 
-  padding: 0.8rem;
-  font-size: 1.4rem; 
+  width: 190px; 
+  padding: 1rem;
+  font-size: 1.5rem; 
   background: #60A5FA; 
 }
 #settings-btn { 
-  width: 140px; 
-  padding: 0.6rem;
-  font-size: 1.2rem; 
+  width: 150px; 
+  padding: 0.8rem;
+  font-size: 1.3rem; 
   background: #F87171; 
 }
 
@@ -162,11 +164,16 @@ body {
 }
 </style>
 </head>
+
 <body>
 
 <div class="main-container">
+
+  <!-- NEW TITLE -->
   <div class="title">GUESS THE STUDENT</div>
+
   <div class="content">
+
     <!-- Cards -->
     <div class="cards-section">
       <div class="card card-color-1" data-name="Alice"><img src="static/img/1.png">Alice</div>
@@ -174,11 +181,13 @@ body {
       <div class="card card-color-3" data-name="Charlie"><img src="static/img/3.png">Charlie</div>
       <div class="card card-color-4" data-name="Diana"><img src="static/img/4.png">Diana</div>
       <div class="card card-color-5" data-name="Eve"><img src="static/img/5.png">Eve</div>
+
       <div class="card card-color-1" data-name="Frank"><img src="static/img/6.png">Frank</div>
       <div class="card card-color-2" data-name="Grace"><img src="static/img/7.png">Grace</div>
       <div class="card card-color-3" data-name="Hank"><img src="static/img/8.png">Hank</div>
       <div class="card card-color-4" data-name="Ivy"><img src="static/img/9.png">Ivy</div>
       <div class="card card-color-5" data-name="Jack"><img src="static/img/10.png">Jack</div>
+
       <div class="card card-color-1" data-name="Kate"><img src="static/img/11.png">Kate</div>
       <div class="card card-color-2" data-name="Leon"><img src="static/img/12.png">Leo</div>
       <div class="card card-color-3" data-name="Mia"><img src="static/img/13.png">Mia</div>
@@ -193,6 +202,7 @@ body {
       <div id="settings-btn" class="button">Settings</div>
       <div id="messages"></div>
     </div>
+
   </div>
 </div>
 
@@ -208,28 +218,24 @@ body {
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
+
 const socket = io();
 
-// Show modal when clicking start
 document.getElementById("start-btn").addEventListener("click", () => {
     document.getElementById("username-modal").style.display = "flex";
 });
 
-// Submit username and redirect to room
 document.getElementById("username-submit").addEventListener("click", () => {
     const username = document.getElementById("username-input").value.trim();
     if(username) {
-        // Redirect to room page with username in query string
         window.location.href = `/room?username=${encodeURIComponent(username)}`;
     }
 });
 
-// How to Play
 document.getElementById("howto-btn").addEventListener("click", () => {
     alert("Click on a card to guess the student.");
 });
 
-// Settings placeholder
 document.getElementById("settings-btn").addEventListener("click", () => {
     alert("Settings not implemented yet.");
 });
