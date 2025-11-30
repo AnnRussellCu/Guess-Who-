@@ -1,0 +1,8 @@
+index.html (start screen, username)
+room.html (lobby, join/create)
+play.html 
+    - choose meme (confirm/cancel modal)
+    - what player sees when its their turn/what player sees when its opponent turn
+    - gameplay
+result.html (win/lose)
+leave.html (only once the game ends)
