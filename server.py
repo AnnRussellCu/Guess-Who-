@@ -1,4 +1,3 @@
-# server.py
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 import random
@@ -33,7 +32,6 @@ def game_page():
 @socketio.on('create_room')
 def handle_create_room(data):
     username = data['username']
-    # Generate unique 6-char room code
     while True:
         room_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         if room_code not in rooms:
@@ -56,36 +54,41 @@ def handle_join_room(data):
         emit('join_result', {'success': False, 'message': 'Room is full'})
         return
 
-    if username in rooms[room_code]:
-        # Already in room (refresh case)
-        join_room(room_code)
-    else:
+    if username not in rooms[room_code]:
         rooms[room_code].append(username)
-        join_room(room_code)
+    join_room(room_code)
 
-    host_name = rooms[room_code][0]
     emit('update_players', rooms[room_code], room=room_code)
-    emit('join_result', {'success': True, 'host': host_name}, to=request.sid)
+    emit('join_result', {'success': True, 'host': rooms[room_code][0]}, to=request.sid)
+
+@socketio.on('join_game_room')
+def handle_join_game_room(data):
+    room_code = data['room_code']
+    username = data['username']
+    join_room(room_code)
+    if room_code in rooms:
+        emit('update_players', rooms[room_code], room=room_code)
 
 @socketio.on('start_game')
 def handle_start_game(data):
     room_code = data.get('room_code')
     username = data.get('username')
-    
+
     if room_code not in rooms or len(rooms[room_code]) != 2:
         return
 
-    # Only allow the host (first player) to start
+    # Only host can start
     if rooms[room_code][0] != username:
         return
 
-    host_name = rooms[room_code][0]
-    # Send room_code AND both players to the game
+    # Notify both players that game starts
     emit('game_started', {
         'room_code': room_code,
-        'host': host_name,
         'players': rooms[room_code]
     }, room=room_code)
+
+    # Immediately show choose screen for first player (or both)
+    emit('your_turn', room=room_code)   # triggers choose screen
 
 if __name__ == '__main__':
     socketio.run(app, host='127.0.0.1', port=5000, debug=True)

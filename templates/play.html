@@ -6,6 +6,8 @@
   <title>Guess the Student – Game</title>
   <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="globals.css" />
+  <link rel="stylesheet" href="style.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -29,62 +31,69 @@
       cursor: pointer;
       user-select: none;
       transition: transform 0.2s;
+      z-index: 100;
     }
     .back-btn:hover { transform: scale(1.2); }
 
-    h1 {
-      font-size: 60px;
-      margin: 1rem 0;
-      color: #a78bfa;
-      text-shadow: 0 0 10px #a78bfa88;
+    h1 { font-size: 60px; margin: 1rem 0; color: #a78bfa; text-shadow: 0 0 10px #a78bfa88; }
+    h2 { font-size: 42px; margin: 1rem 0; color: #60A5FA; }
+    .room-info { background: #2d1b69; padding: 1.5rem 3rem; border-radius: 20px; margin: 1.5rem 0; font-size: 32px; box-shadow: 0 0 20px #00000088; }
+    .players-section { margin-top: 3rem; background: #1e293b; padding: 2rem; border-radius: 25px; min-width: 400px; box-shadow: 0 0 30px #000000aa; }
+    .players-section h3 { font-size: 40px; margin-bottom: 1.5rem; color: #FACC15; }
+    #playerList { list-style: none; }
+    #playerList li { font-size: 36px; margin: 15px 0; padding: 10px; background: #334155; border-radius: 15px; font-family: 'Bungee Inline', cursive; }
+    #playerList li.you { background: #10B981 !important; color: white; font-weight: bold; }
+    .status { margin-top: 2rem; font-size: 28px; color: #94a3b8; }
+
+    /* Choose classmate screen */
+    #chooseScreen { display: none; width: 100%; min-height: 100vh; }
+    .play-screen {
+      background-color: #1e1e2f;
+      width: 100%;
+      min-width: 1440px;
+      min-height: 1024px;
+      display: flex;
+      flex-direction: column;
+      gap: 68px;
+      align-items: center;
     }
-    h2 {
-      font-size: 42px;
-      margin: 1rem 0;
-      color: #60A5FA;
+    .play-screen .text-wrapper {
+      margin-top: 131px;
+      font-family: "Dokdo-Regular", Helvetica;
+      font-weight: 400;
+      color: #ffffff;
+      font-size: 64px;
     }
-    .room-info {
-      background: #2d1b69;
-      padding: 1.5rem 3rem;
+    .play-screen .cards {
+      width: 850px;
+      height: 615px;
+      position: relative;
+    }
+    .play-screen .group { position: absolute; width: 152px; height: 195px; cursor: pointer; }
+    .play-screen .group:hover { transform: scale(1.08); transition: 0.2s; }
+    .play-screen .rectangle,
+    .play-screen .rectangle-2,
+    .play-screen .rectangle-3,
+    .play-screen .rectangle-4 {
+      position: absolute;
+      top: 0; left: 0;
+      width: 150px; height: 195px;
       border-radius: 20px;
-      margin: 1.5rem 0;
-      font-size: 32px;
-      box-shadow: 0 0 20px #00000088;
     }
-    .players-section {
-      margin-top: 3rem;
-      background: #1e293b;
-      padding: 2rem;
-      border-radius: 25px;
-      min-width: 400px;
-      box-shadow: 0 0 30px #000000aa;
-    }
-    .players-section h3 {
-      font-size: 40px;
-      margin-bottom: 1.5rem;
-      color: #FACC15;
-    }
-    #playerList {
-      list-style: none;
-      padding: 0;
-    }
-    #playerList li {
-      font-size: 36px;
-      margin: 15px 0;
-      padding: 10px;
-      background: #334155;
-      border-radius: 15px;
-      font-family: 'Bungee Inline', cursive;
-    }
-    #playerList li.you {
-      background: #10B981 !important;
-      color: white;
-      font-weight: bold;
-    }
-    .status {
-      margin-top: 2rem;
-      font-size: 28px;
-      color: #94a3b8;
+    .play-screen .rectangle { background-color: #facc15; }
+    .play-screen .rectangle-2 { background-color: #60a5fa; }
+    .play-screen .rectangle-3 { background-color: #f87171; }
+    .play-screen .rectangle-4 { background-color: #4ade80; }
+    .play-screen img { position: absolute; width: 130px; height: 130px; top: 15px; left: 10px; object-fit: cover; }
+    .play-screen .div {
+      position: absolute;
+      top: 163px;
+      left: 52px;
+      font-family: "Bungee Inline-Regular", Helvetica;
+      font-weight: 400;
+      color: #000000;
+      font-size: 15px;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -92,60 +101,161 @@
 
   <div class="back-btn" onclick="window.location.href='/'">Back</div>
 
-  <h1>GUESS THE STUDENT</h1>
-  <div class="room-info">
-    Room Code: <strong id="roomCode">{{ room_code }}</strong>
+  <!-- CHOOSE CLASSMATE SCREEN -->
+  <div class="play-screen" id="chooseScreen">
+    <div class="text-wrapper">CHOOSE A CLASSMATE:</div>
+    <div class="cards">
+      <div class="group" style="top:0;left:0" data-id="1">
+        <div class="rectangle"></div>
+        <img src="static/img/1.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:0;left:700px" data-id="2">
+        <div class="rectangle"></div>
+        <img src="static/img/2.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:210px;left:175px" data-id="3">
+        <div class="rectangle-2"></div>
+        <img src="static/img/3.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:0;left:175px" data-id="4">
+        <div class="rectangle-3"></div>
+        <img src="static/img/4.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:0;left:350px" data-id="5">
+        <div class="rectangle-2"></div>
+        <img src="static/img/5.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:210px;left:525px" data-id="6">
+        <div class="rectangle"></div>
+        <img src="static/img/6.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:0;left:525px" data-id="7">
+        <div class="rectangle-4"></div>
+        <img src="static/img/7.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:210px;left:700px" data-id="8">
+        <div class="rectangle-3"></div>
+        <img src="static/img/8.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:210px;left:0" data-id="9">
+        <div class="rectangle-3"></div>
+        <img src="static/img/9.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:210px;left:350px" data-id="10">
+        <div class="rectangle-4"></div>
+        <img src="static/img/10.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:420px;left:175px" data-id="11">
+        <div class="rectangle-4"></div>
+        <img src="static/img/11.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:420px;left:0" data-id="12">
+        <div class="rectangle-2"></div>
+        <img src="static/img/12.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:420px;left:350px" data-id="13">
+        <div class="rectangle"></div>
+        <img src="static/img/13.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:420px;left:525px" data-id="14">
+        <div class="rectangle-3"></div>
+        <img src="static/img/14.png" />
+        <div class="div">Name</div>
+      </div>
+      <div class="group" style="top:420px;left:700px" data-id="15">
+        <div class="rectangle-2"></div>
+        <img src="static/img/15.png" />
+        <div class="div">Name</div>
+      </div>
+    </div>
   </div>
-  <h2>Welcome, <span id="usernameDisplay">{{ username }}</span>!</h2>
 
-  <div class="players-section">
-    <h3>Players in Room</h3>
-    <ul id="playerList">
-      <li>Loading players...</li>
-    </ul>
+  <!-- WAITING / LOBBY SCREEN -->
+  <div id="waitingScreen">
+    <h1>GUESS THE STUDENT</h1>
+    <div class="room-info">
+      Room Code: <strong id="roomCode">{{ room_code }}</strong>
+    </div>
+    <h2>Welcome, <span id="usernameDisplay">{{ username }}</span>!</h2>
+
+    <div class="players-section">
+      <h3>Players in Room</h3>
+      <ul id="playerList"><li>Loading players...</li></ul>
+    </div>
+
+    <div class="status" id="status">Waiting for game to begin...</div>
   </div>
 
-  <div class="status" id="status">Waiting for game to begin...</div>
-
-  <!-- Use Flask's built-in Socket.IO client -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
-    // Get data from URL (safe fallback)
     const urlParams = new URLSearchParams(window.location.search);
     const roomCode = urlParams.get('room') || "{{ room_code }}";
     const username = urlParams.get('username') || "{{ username }}";
 
-    // Update display
     document.getElementById('roomCode').textContent = roomCode;
     document.getElementById('usernameDisplay').textContent = username;
 
-    // Join the actual game room
     socket.emit('join_game_room', { room_code: roomCode, username: username });
 
     const playerList = document.getElementById('playerList');
     const statusEl = document.getElementById('status');
 
+    // Update player list
     socket.on('players_update', (players) => {
       playerList.innerHTML = '';
-      players.forEach(player => {
+      players.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = player;
-        if (player === username) {
-          li.textContent += ' (You)';
-          li.classList.add('you');
-        }
+        li.textContent = p + (p === username ? ' (You)' : '');
+        if (p === username) li.classList.add('you');
         playerList.appendChild(li);
       });
-      if (players.length === 2) {
-        statusEl.textContent = "Both players ready! Game starting soon...";
-      }
     });
 
-    socket.on('game_ready', () => {
-      statusEl.textContent = "Game is starting!";
-      statusEl.style.color = "#10B981";
+    // Game started → hide lobby
+    socket.on('game_started', () => {
+      statusEl.textContent = "Game started! Get ready...";
+      statusEl.style.color = "#FACC15";
+    });
+
+    // Your turn → show choose screen
+    socket.on('your_turn', () => {
+      document.getElementById('waitingScreen').style.display = 'none';
+      document.getElementById('chooseScreen').style.display = 'flex';
+      statusEl.textContent = "Your turn! Choose a classmate.";
+    });
+
+    // Opponent's turn
+    socket.on('opponent_turn', () => {
+      document.getElementById('chooseScreen').style.display = 'none';
+      document.getElementById('waitingScreen').style.display = 'block';
+      statusEl.textContent = "Opponent is choosing...";
+    });
+
+    // Card selection
+    document.querySelectorAll('.play-screen .group').forEach(card => {
+      card.addEventListener('click', () => {
+        const selectedId = card.dataset.id;
+        socket.emit('player_chose', { room_code: roomCode, choice: selectedId });
+        // Optional: visual feedback
+        document.querySelectorAll('.group').forEach(c => c.style.opacity = '0.5');
+        card.style.opacity = '1';
+        card.style.transform = 'scale(1.15)';
+      });
     });
   </script>
 </body>
