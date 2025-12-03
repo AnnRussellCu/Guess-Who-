@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>You Won Screen</title>
+
+<style>
+    * {
+  font-family: 'Bungee Inline', sans-serif;
+}
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: "BungeeInline-Regular", sans-serif;
+    background: #1e1e2f;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* ⬆️ CONTAINER NOW LARGER (95% x 95%) */
+  .win-screen {
+    width: 180%;
+    max-width: 1500px;
+    height: 90%;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 25px;
+    border: 3px dashed #9ca3af;
+    position: relative;
+    padding: 85px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* LEFT CONTENT (CENTER PIECE) */
+  .left-area {
+    flex: 1;
+    text-align: center;
+  }
+
+  .you-won {
+    color: #ffffff;
+    font-size: 70px;
+    margin-bottom: 15px;
+  }
+
+  .player-1 {
+    color: #ffffff;
+    font-size: 32px;
+    opacity: 0.85;
+    margin-bottom: 25px;
+  }
+
+  .medal-img {
+    width: 230px;
+    margin: 35px auto;
+    display: block;
+  }
+
+  /* RIGHT BUTTONS */
+  .side-buttons {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .btn {
+    background: #10b981;
+    color: white;
+    padding: 22px;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .btn-leave {
+    background: #60a5fa;
+  }
+
+  /* CHAT BOX */
+  .chat-box {
+    width: 380px;
+    height: 100px;
+    background: #374151;
+    border-radius: 12px;
+    position: absolute;
+    right: 50px;
+    bottom: 40px;
+    padding: 12px;
+  }
+
+  .chat-inner {
+    width: 100%;
+    height: 55px;
+    background: #d9d9d9;
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+    color: #4b5563;
+    font-size: 18px;
+  }
+
+  .sent-icon {
+    width: 34px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    transform: rotate(-45deg);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="win-screen">
+
+  <!-- LEFT CONTENT -->
+  <div class="left-area">
+    <div class="player-1">PLAYER 1</div>
+    <div class="you-won">YOU WON!</div>
+
+
+    <img src="golden-medal-first-place-medal-of-sport-competition-cartoon-design-for-poster-icon-card-logo-label-banner-or-sticker-graphic-design-isolated-illustration-vector-removebg-preview-10.png"
+         class="medal-img">
+  </div>
+
+  <!-- RIGHT BUTTONS -->
+  <div class="side-buttons">
+      <div class="btn" id="playAgainBtn" onclick="playerClicked()">PLAY AGAIN 0/2</div>
+      <div class="btn btn-leave" onclick="leaveLobby()">LEAVE LOBBY</div>
+  </div>
+
+  <!-- CHAT BOX -->
+  <div class="chat-box">
+      <div class="chat-inner">
+          Enter message...
+          <img src="sent0.png" class="sent-icon" onclick="sendMessage()">
+      </div>
+  </div>
+
+</div>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  function leaveLobby() {
+    alert("Leaving lobby...");
+  }
+
+  function playAgain() {
+    alert("Restarting game...");
+  }
+
+  function sendMessage() {
+    alert("Message sent!");
+  }
+   const socket = io();
+
+  const playBtn = document.getElementById("playAgainBtn");
+  const roomCode = "{{ room_code }}"; // from Flask template
+  const username = "{{ username }}";   // from Flask template
+  let totalPlayers = 2;
+  let playersReady = 0;
+  let hasClicked = false;
+
+  // Join game room
+  socket.emit('join_game_room', { room_code: roomCode, username });
+
+  // Update ready count dynamically
+  socket.on('update_ready_count', (data) => {
+    playersReady = data.ready_players;
+    playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers}`;
+
+    // Optional: show "Waiting for player 2" message
+    if (playersReady < totalPlayers) {
+      playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting for player 2)`;
+    }
+  });
+
+  function playAgain() {
+    if (hasClicked) return; // prevent double click
+    hasClicked = true;
+
+    socket.emit('player_ready', { room_code: roomCode, username });
+    playBtn.style.opacity = "0.7";
+  }
+
+  // When both players ready → start game
+  socket.on('start_game', () => {
+    playBtn.innerText = "BOTH PLAYERS READY!";
+    setTimeout(() => {
+      window.location.href = `/play.html?room=${roomCode}&username=${username}`;
+    }, 500);
+  });
+
+</script>
+
+</body>
+</html>
