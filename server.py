@@ -92,3 +92,26 @@ def handle_start_game(data):
 
 if __name__ == '__main__':
     socketio.run(app, host='127.0.0.1', port=5000, debug=True)
+
+    # Track ready players per room
+ready_players = {}  # { room_code: [username1, username2] }
+
+@socketio.on('player_ready')
+def handle_player_ready(data):
+    room_code = data['room_code']
+    username = data['username']
+
+    if room_code not in ready_players:
+        ready_players[room_code] = []
+
+    if username not in ready_players[room_code]:
+        ready_players[room_code].append(username)
+
+    # Send current ready count to all players in room
+    emit('update_ready_count', {'ready_players': len(ready_players[room_code])}, room=room_code)
+
+    # Start game when all players (2) clicked
+    if len(ready_players[room_code]) == 2:
+        emit('start_game', room=room_code)
+        # Reset for next round
+        ready_players[room_code] = []
