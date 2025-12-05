@@ -175,8 +175,8 @@ const playerNameText = document.querySelector(".player-1");
 const medalImg = document.querySelector(".medal-img");
 
 // Default medal images
-const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}"; // 1st place
-const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}"; // 2nd place
+const winMedal = "{{ url_for('static', filename='img/goldmedal.png') }}";
+const loseMedal = "{{ url_for('static', filename='img/silvermedal.png') }}";
 
 // Join game room
 socket.emit('join_game_room', { room_code: roomCode, username });
@@ -258,5 +258,6 @@ socket.on("receive_chat", (data) => {
 
 </body>
 </html>
+
 
 
