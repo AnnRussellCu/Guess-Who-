@@ -204,8 +204,24 @@ def finish_choose_phase(room_code):
         if room_code in active_timers:
             del active_timers[room_code]
 
+# ---------------------
+# CHAT SYSTEM
+# ---------------------
+
+@socketio.on("send_chat")
+def handle_chat(data):
+    room = data["room"]
+    username = data["username"]
+    message = data["message"]
+
+    # Broadcast to room
+    emit("receive_chat", {
+        "username": username,
+        "message": message
+    }, room=room)
 
 # ---------------------
+
 
 if __name__ == '__main__':
     socketio.run(app, host='127.0.0.1', port=5000, debug=True)
