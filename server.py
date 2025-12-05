@@ -37,13 +37,13 @@ def room():
         return "No username provided", 400
     return render_template('room.html', username=username)
 
-@app.route('/play.html')
+@app.route('/choose.html')
 def game_page():
     room_code = request.args.get('room')
     username = request.args.get('username')
     if not room_code or not username:
         return "Missing parameters", 400
-    return render_template('play.html', room_code=room_code, username=username)
+    return render_template('choose.html', room_code=room_code, username=username)
 
 
 # ---------------------
