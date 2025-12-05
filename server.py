@@ -199,6 +199,17 @@ def finish_choose_phase(room_code):
         'choices': player_choices[room_code]
     }, room=room_code)
 
+    # Higher choice wins
+    winner = max(player_choices[room_code], key=lambda u: player_choices[room_code][u])
+    
+    for p in players:
+        result = 'win' if p == winner else 'lose'
+        socketio.emit('game_over', {
+            'username': p,
+            'room_code': room_code,
+            'result': result
+        }, room=room_code)
+        
     # Clean up timer reference
     with timer_lock:
         if room_code in active_timers:
