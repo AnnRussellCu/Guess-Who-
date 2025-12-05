@@ -261,7 +261,7 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 const socket = io();
-const playBtn = document.getElementById("joinMainBtn"); // reuse your join button as "Play Again"
+const playBtn = document.getElementById("joinMainBtn"); // Play Again button
 const leaveBtn = document.getElementById("leaveMainBtn");
 const roomCode = "{{ room_code }}";
 const username = "{{ username }}";
@@ -275,10 +275,10 @@ const medalImg = document.querySelector(".medal-img");
 const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}";
 const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}";
 
-// Join game room for rematch logic
+// Join game room
 socket.emit('join_game_room', { room_code: roomCode, username });
 
-// Listen for game_over event to update results
+// Update result text on game_over
 socket.on("game_over", (data) => {
     if (data.username !== username) return; // Only update for this player
 
@@ -296,16 +296,17 @@ socket.on("game_over", (data) => {
     playerNameText.textContent = username;
 });
 
-// Ready / Play again button logic
-let hasClicked = false; // tracks if current player clicked join
-let playersReady = 0;    // current ready count
-const totalPlayers = 2;  // max players
+// -------------------
+// Play Again Button Logic
+// -------------------
+let hasClicked = false; 
+let playersReady = 0;
+const totalPlayers = 2;
 
 // Update ready count from server
 socket.on('update_ready_count', (data) => {
     playersReady = data.ready_players;
 
-    // Only show "waiting..." if player has clicked but not all ready
     if (hasClicked && playersReady < totalPlayers) {
         playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
     } else {
@@ -313,46 +314,44 @@ socket.on('update_ready_count', (data) => {
     }
 });
 
+// Click to signal ready
 playBtn.onclick = () => {
     if (hasClicked) return;
     hasClicked = true;
-    playersReady = Math.max(playersReady, 1); // show at least 1
+    playersReady = Math.max(playersReady, 1);
     socket.emit('player_ready', { room_code: roomCode, username });
     playBtn.classList.add('clicked');
     playBtn.style.opacity = "0.7";
     playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
 };
 
-// Start the rematch automatically when all players are ready
-socket.on('start_game', () => {
-    playBtn.innerText = "STARTING...";
-    setTimeout(() => {
-        window.location.href = `/play.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
-    }, 500);
+// Redirect when server signals game start
+socket.on('redirect_to_game', (data) => {
+    window.location.href = `/play.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
 });
 
-// Modal logic
+// -------------------
+// Modal / Leave Logic
+// -------------------
 const leaveModal = document.getElementById("leaveModal");
 const confirmLeaveBtn = document.getElementById("confirmLeaveBtn");
 const cancelLeaveBtn = document.getElementById("cancelLeaveBtn");
 
-// Show modal when clicking leave
 leaveBtn.onclick = () => leaveModal.style.display = "flex";
 
-// Confirm leave
 confirmLeaveBtn.onclick = () => {
     socket.emit('leave_game', { room_code: roomCode, username });
     window.location.href = "/";
 };
 
-// Cancel leave
 cancelLeaveBtn.onclick = () => leaveModal.style.display = "none";
 
-// Close modal if clicking outside the box
+// Close modal if clicking outside
 window.onclick = (event) => {
     if (event.target === leaveModal) leaveModal.style.display = "none";
 };
 </script>
+
 
 </body>
 </html>
