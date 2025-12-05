@@ -18,6 +18,14 @@ player_choices = {}
 active_timers = {}
 timer_lock = Lock()
 
+# { room_code: set() } to track ready players
+ready_players = {}
+
+
+# ---------------------
+# ROUTES
+# ---------------------
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -109,9 +117,6 @@ def handle_start_game(data):
     if rooms[room_code][0] != username:
         return
 
-    # Initialize choices
-    player_choices[room_code] = {}
-
     # Redirect both players to play.html with their OWN username
     for player in rooms[room_code]:
         emit('redirect_to_game', {
@@ -120,26 +125,28 @@ def handle_start_game(data):
         }, room=room_code)
 
 
+# ---------------------
+# PLAYER READY
+# ---------------------
+
 @socketio.on('player_ready')
 def handle_player_ready(data):
-    """Called when a player loads play.html"""
     room_code = data.get('room_code')
+    username = data.get('username')
     
     if room_code not in rooms:
         return
     
-    # Check if both players are ready (both have joined the game room)
-    # For simplicity, we'll start the choose phase immediately
-    # In a production app, you'd track ready status per player
+    if room_code not in ready_players:
+        ready_players[room_code] = set()
+    ready_players[room_code].add(username)
     
-    # Only start once
-    if room_code not in player_choices:
+    # Start choose phase only when BOTH players are ready
+    if len(ready_players[room_code]) == len(rooms[room_code]) and room_code not in player_choices:
         player_choices[room_code] = {}
-        
-        # Start choose phase for BOTH players
         socketio.emit('choose_phase_start', room=room_code)
         
-        # Start auto-timeout 10 seconds
+        # Start 10s auto-timeout
         with timer_lock:
             if room_code in active_timers:
                 active_timers[room_code].cancel()
@@ -156,7 +163,7 @@ def handle_player_ready(data):
 def player_chose(data):
     room = data['room_code']
     user = data['username']
-    choice = data['choice']
+    choice = int(data['choice'])
 
     if room not in player_choices:
         player_choices[room] = {}
@@ -172,16 +179,12 @@ def player_chose(data):
         finish_choose_phase(room)
 
 
-# -----------------------------------
-# FINISH CHOOSE PHASE (AUTO OR EARLY)
-# -----------------------------------
+# ---------------------
+# FINISH CHOOSE PHASE
+# ---------------------
 
 def finish_choose_phase(room_code):
-    if room_code not in rooms:
-        return
-
-    # Prevent double execution
-    if room_code not in player_choices:
+    if room_code not in rooms or room_code not in player_choices:
         return
 
     players = rooms[room_code]
@@ -200,9 +203,6 @@ def finish_choose_phase(room_code):
     with timer_lock:
         if room_code in active_timers:
             del active_timers[room_code]
-
-    # Now you can proceed to the actual game phase
-    # (Add your game logic here)
 
 
 # ---------------------
