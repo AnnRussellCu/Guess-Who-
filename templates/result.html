@@ -327,7 +327,7 @@ playBtn.onclick = () => {
 
 // Redirect when server signals game start
 socket.on('redirect_to_game', (data) => {
-    window.location.href = `/play.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
+    window.location.href = `/choose.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
 });
 
 // -------------------

@@ -292,7 +292,7 @@
   socket.on('redirect_to_game', data => {
     const room = data.room_code;
     const user = data.username;
-    window.location.href = `/play.html?room=${room}&username=${encodeURIComponent(user)}`;
+    window.location.href = `/choose.html?room=${room}&username=${encodeURIComponent(user)}`;
   });
 </script>
 </body>
