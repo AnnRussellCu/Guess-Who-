@@ -7,9 +7,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Dokdo&family=Bungee+Inline&display=swap" rel="stylesheet"/>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#1E1E2F; color:white; font-family:'Dokdo',sans-serif; min-height:100vh; overflow:hidden; }
-    .back-btn { position:absolute; top:20px; left:20px; font-size:40px; cursor:pointer; z-index:1000; }
-    .back-btn:hover { transform:scale(1.2); }
+    body { background:#1E1E2F; color:white; font-family:'Dokdo',sans-serif; height:100vh; overflow:hidden; }
+    .back {
+      position: absolute;
+      top: 27px;
+      left: 14px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      cursor: pointer;
+      font-family: 'Bungee Inline';
+      font-size: 32px;
+      color: #fff;
+    }
+    .back:hover { opacity:0.8; }
     #tutorialOverlay {
       position:fixed; inset:0; background:rgba(0,0,0,0.9);
       display:flex; align-items:center; justify-content:center;
@@ -17,11 +28,17 @@
       opacity:1; transition:opacity 0.8s ease-out;
     }
     #tutorialOverlay.hidden { opacity:0; pointer-events:none; }
-    #chooseScreen { display:none; flex-direction:column; align-items:center; padding-top:100px; }
+    #chooseScreen { display:none; flex-direction:column; align-items:center; padding:40px 40px 20px; }
     #chooseScreen.active { display:flex; }
-    #chooseScreen h1 { font-size:70px; color:#a78bfa; text-shadow:0 0 15px #a78bfa88; }
-    #timer { font-size:48px; color:#FACC15; margin:20px 0; }
-    .cards-grid { display:grid; grid-template-columns:repeat(5,160px); gap:20px 140px; margin-top:50px; }
+    #chooseScreen h1 { font-size:50px; color:#a78bfa; text-shadow:0 0 15px #a78bfa88; margin-bottom:10px; }
+    #timer { font-size:32px; color:#FACC15; margin:0 0 20px; }
+    .cards-grid {
+      display:grid;
+      grid-template-columns:repeat(5, 152px);
+      grid-template-rows:repeat(3, 195px);
+      gap:15px;
+      justify-content:center;
+    }
     .meme-btn {
       width:152px; height:195px; background:none; border:none; cursor:pointer; position:relative;
       transition:transform .2s;
@@ -37,32 +54,138 @@
       position:absolute; bottom:15px; left:0; width:100%; text-align:center;
       font-family:'Bungee Inline',cursive; color:#000; font-size:15px; pointer-events:none;
     }
+
+    /* ====================== NEW CONFIRM MODAL (4 COLOR VARIANTS) ====================== */
     #confirmModal {
       position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none;
       align-items:center; justify-content:center; z-index:1000;
     }
     #confirmModal.active { display:flex; }
-    .modal-box {
-      width:700px; height:500px; background:#333; border-radius:20px; position:relative;
-      overflow:hidden; box-shadow:0 0 30px #000;
+
+    .box {
+      position: relative;
+      width: 700px;
+      height: 500px;
     }
-    .modal-bg { position:absolute; inset:0; border-radius:20px; }
-    .modal-img { position:absolute; top:80px; left:50px; width:130px; height:130px; }
-    .modal-name { position:absolute; top:70px; left:210px; font-size:40px; font-family:'Bungee Inline',cursive; color:#fff; }
-    .modal-desc { position:absolute; top:180px; left:60px; font-size:24px; }
-    .modal-buttons { position:absolute; bottom:40px; left:80px; right:80px; display:flex; gap:80px; }
-    .modal-btn {
-      width:240px; height:60px; border:none; border-radius:10px; cursor:pointer;
-      font-family:'Bungee Inline',cursive; font-size:26px; color:#fff;
+    .box .rectangle {
+      width: 700px;
+      height: 500px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 10px;
     }
-    .modal-btn.cancel { background:#de7d4a; }
-    .modal-btn.confirm { background:#a78bfa; }
-    #gameplayScreen { display:none; position:relative; min-height:100vh; }
-    #gameplayScreen.active { display:block; }
-    #turnIndicator { position:absolute; top:80px; left:210px; font-size:64px; }
+    .box.yellow .rectangle  { background-color: #facc15cc; }
+    .box.red .rectangle    { background-color: #f87171; }
+    .box.blue .rectangle   { background-color: #60a5fa; }
+    .box.green .rectangle  { background-color: #4ade80; }
+
+    .box .doodle-character {
+      position: absolute;
+      top: 31px;
+      left: 37px;
+      width: 130px;
+      height: 130px;
+    }
+    .box .text-wrapper-3 {
+      position: absolute;
+      top: 77px;
+      left: 202px;
+      font-family: "Bungee Inline", Helvetica;
+      font-weight: 400;
+      color: #000000;
+      font-size: 32px;
+      white-space: nowrap;
+    }
+    .box .description {
+      position: absolute;
+      top: 187px;
+      left: 54px;
+      font-family: "Bungee Inline", Helvetica;
+      font-weight: 400;
+      color: #000000;
+      font-size: 20px;
+      line-height: normal;
+    }
+
+    .box .action-buttons {
+      position: absolute;
+      bottom: 37px;
+      left: 80px;
+      right: 77px;
+      display: flex;
+      justify-content: space-between;
+      gap: 73px;
+      z-index: 2;
+    }
+    .box .choose,
+    .box .change {
+      position: relative;
+      width: 237px;
+      height: 60px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .box .choose:hover,
+    .box .change:hover { transform: translateY(-2px); opacity: 0.9; }
+    .box .choose:active,
+    .box .change:active { transform: translateY(0); }
+
+    .box .div,
+    .box .rectangle-2 {
+      width: 235px;
+      height: 60px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+    .box .div        { background-color: #a78bfa; }
+    .box .rectangle-2 { background-color: #de7d4a; }
+
+    .box .text-wrapper,
+    .box .text-wrapper-2 {
+      position: absolute;
+      top: calc(50% - 14px);
+      font-family: "Bungee Inline", Helvetica;
+      font-weight: 400;
+      color: #ffffff;
+      font-size: 24px;
+      pointer-events: none;
+    }
+    .box .text-wrapper   { left: calc(50% - 90px); }
+    .box .text-wrapper-2 { left: calc(50% - 114px); }
+    /* ================================================================================= */
+
+    #gameplayScreen { display:none; height:100vh; overflow:hidden; }
+    #gameplayScreen.active { display:flex; flex-direction:column; }
+    #turnIndicator { font-size:clamp(32px, 4vw, 64px); margin:20px 0 10px; text-align:center; }
+   
+    .game-container {
+      display:flex;
+      gap:40px;
+      height:calc(100vh - 120px);
+      padding:0 20px;
+      align-items:center;
+      justify-content:center;
+    }
+   
+    .left-section {
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+      align-items:center;
+    }
+   
     .game-grid {
-      position:absolute; top:214px; left:60px; width:850px; height:615px;
-      display:grid; grid-template-columns:repeat(5,152px); gap:23px 148px;
+      display:grid;
+      grid-template-columns:repeat(5, 152px);
+      grid-template-rows:repeat(3, 195px);
+      gap:15px;
     }
     .game-card { width:152px; height:195px; position:relative; cursor:pointer; transition:.2s; }
     .game-card:hover { transform:scale(1.05); }
@@ -83,19 +206,35 @@
       font-family:'Bungee Inline',cursive; color:#000; font-size:15px;
     }
     .opponent-area {
-      position:absolute; top:60px; left:1012px; width:378px; display:flex; gap:30px; align-items:center;
+      display:flex;
+      gap:20px;
+      align-items:center;
+      justify-content:center;
     }
-    .opponent-info { font-size:20px; width:200px; }
+    .opponent-info { font-size:18px; max-width:200px; line-height:1.4; }
     .target-card {
       width:150px; height:195px; background:#facc15; border-radius:20px;
-      display:flex; align-items:center; justify-content:center;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
     .target-card img { width:130px; height:130px; }
-    .chat-box {
-      position:absolute; top:291px; left:973px; width:421px; height:680px;
-      background:#374151; border-radius:10px; padding:20px; display:flex; flex-direction:column;
+   
+    .right-section {
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+      height:100%;
+      justify-content:center;
     }
-    #chatMessages { flex:1; overflow-y:auto; font-size:24px; }
+   
+    .chat-box {
+      background:#374151; border-radius:10px; padding:20px;
+      display:flex; flex-direction:column;
+      height:calc(100vh - 300px);
+      min-height:400px;
+      max-height:600px;
+      width:420px;
+    }
+    #chatMessages { flex:1; overflow-y:auto; font-size:20px; }
     .msg { margin:8px 0; }
     .msg.you { color:#de7d4a; }
     .msg.opponent { color:#a78bfa; }
@@ -103,108 +242,124 @@
     #messageForm { margin-top:10px; display:flex; gap:10px; }
     #chatInput { flex:1; padding:12px; background:#d9d9d9; border:none; border-radius:8px; font-size:16px; }
     #sendBtn { width:54px; height:54px; background:transparent; border:none; cursor:pointer; }
-    .action-btn { position:absolute; width:240px; height:60px; }
-    #guessBtn { top:901px; left:542px; background:#a78bfa; }
-    #resetBtn { top:901px; left:192px; background:#de7d4a; }
+   
+    .action-buttons {
+      display:flex;
+      gap:20px;
+      justify-content:center;
+    }
+    .action-btn { width:200px; height:50px; }
     .action-btn button {
       width:100%; height:100%; border:none; border-radius:10px; cursor:pointer;
-      font-family:'Bungee Inline',cursive; font-size:26px; color:#fff;
+      font-family:'Bungee Inline',cursive; font-size:22px; color:#fff;
     }
-    .hint { position:absolute; bottom:20px; left:20px; font-size:18px; }
+    #guessBtn button { background:#a78bfa; }
+    #resetBtn button { background:#de7d4a; }
+    .hint { text-align:center; font-size:16px; margin-top:5px; }
   </style>
 </head>
 <body>
-  <div class="back-btn" onclick="location.href='/'">Back</div>
-
+  <div class="back" onclick="location.href='/'">
+    Back
+  </div>
   <div id="tutorialOverlay">
     <div>READY...</div>
     <div style="font-size:100px;">PICK A MEME</div>
     <div>Your opponent will guess it!</div>
   </div>
-
   <div id="chooseScreen">
     <h1>CHOOSE A MEME:</h1>
     <div id="timer">Time remaining: 10s</div>
     <div class="cards-grid" id="chooseCards"></div>
   </div>
 
+  <!-- NEW CONFIRM MODAL -->
   <div id="confirmModal">
-    <div class="modal-box">
-      <div class="modal-bg" id="modalBg"></div>
-      <img id="modalImg" class="modal-img" src="" alt=""/>
-      <div id="modalName" class="modal-name"></div>
-      <div class="modal-desc">Is this the meme you want?</div>
-      <div class="modal-buttons">
-        <button class="modal-btn cancel" id="cancelBtn">Choose another</button>
-        <button class="modal-btn confirm" id="confirmBtn">Yes, choose!</button>
-      </div>
+    <div class="box" id="modalBox">
+      <div class="rectangle"></div>
+      <img class="doodle-character" id="modalImg" src="" alt=""/>
+      <div class="text-wrapper-3" id="modalName"></div>
+      <div class="description">Is this the meme you want?</div>
+      <nav class="action-buttons">
+        <button class="change" id="cancelBtn">
+          <div class="rectangle-2"></div>
+          <span class="text-wrapper-2">Choose another</span>
+        </button>
+        <button class="choose" id="confirmBtn">
+          <div class="div"></div>
+          <span class="text-wrapper">Yes, choose!</span>
+        </button>
+      </nav>
     </div>
   </div>
 
   <main id="gameplayScreen">
     <h1 id="turnIndicator">Your turn.</h1>
-    <div class="game-grid" id="gameGrid"></div>
-    <div class="opponent-area">
-      <div class="opponent-info">
-        Your opponent's meme:<br>
-        <span id="oppName">???</span><br><br>
-        Guess which one it is!
+    <div class="game-container">
+      <div class="left-section">
+        <div class="game-grid" id="gameGrid"></div>
+        <div class="opponent-area">
+          <div class="opponent-info">
+            Your opponent's meme:<br>
+            <span id="oppName">???</span><br><br>
+            Guess which one it is!
+          </div>
+          <div class="target-card"><img id="oppImg" src="" alt=""/></div>
+        </div>
+        <div class="action-buttons">
+          <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
+          <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
+        </div>
+        <div class="hint">Hint: Double-click a card to cross it out</div>
       </div>
-      <div class="target-card"><img id="oppImg" src="" alt=""/></div>
+      <div class="right-section">
+        <div class="chat-box">
+          <div id="chatMessages"><div class="msg system">Game started!</div></div>
+          <form id="messageForm">
+            <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
+            <button id="sendBtn" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
     </div>
-    <div class="chat-box">
-      <div id="chatMessages"><div class="msg system">Game started!</div></div>
-      <form id="messageForm">
-        <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
-        <button id="sendBtn" type="submit">Send</button>
-      </form>
-    </div>
-    <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
-    <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
-    <div class="hint">Hint: Double-click a card to cross it out</div>
   </main>
 
- <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
     const socket = io();
     const params = new URLSearchParams(location.search);
     const roomCode = params.get('room') || 'TEST';
     const username = params.get('username') || 'Player';
-
     socket.emit('join_game_room', { room_code: roomCode, username });
     socket.emit('player_ready', { room_code: roomCode, username });
-
     const memes = [
-      {id:1, name:"Doubter", img:"img/doodle-character-doubting-something.png", color:"yellow"},
-      {id:2, name:"Conspiracy Keanu", img:"img/conspiracy-keanu-frightened-or-shocked-person.png", color:"red"},
-      {id:3, name:"Mini Keanu", img:"img/mini-or-short-keanu-reeves.png", color:"blue"},
-      {id:4, name:"Eye Roll", img:"img/man-with-eye-roll-annoyed-about-something.png", color:"green"},
-      {id:5, name:"Guard", img:"img/guard-standing-at-the-door.png", color:"yellow"},
-      {id:6, name:"Pointing Glasses", img:"img/man-with-glass-pointing-at-something.png", color:"red"},
-      {id:7, name:"Looking Guy", img:"img/guy-looking-at-something.png", color:"blue"},
-      {id:8, name:"Borat Thumbs", img:"img/borat-showing-thumbs-up-gesture.png", color:"green"},
-      {id:9, name:"Confused Woman", img:"img/surprised-or-confused-young-woman.png", color:"yellow"},
-      {id:10, name:"Smirk", img:"img/man-with-a-smirking-face.png", color:"red"},
-      {id:11, name:"Roll Safe", img:"img/roll-safe-think-about-it.png", color:"blue"},
-      {id:12, name:"Gandalf", img:"img/you-shall-not-pass-gandalf.png", color:"green"},
-      {id:13, name:"Sad Affleck", img:"img/meme-with-sitting-sad-man.png", color:"yellow"},
-      {id:14, name:"Tada Man", img:"img/tada-man-in-suit-presenting-something.png", color:"red"},
-      {id:15, name:"Confused Gandalf", img:"img/confused-gandalf-wizard-with-staff.png", color:"blue"}
+      {id:1, name:"Doubter", img:"static/img/1.png", color:"yellow"},
+      {id:2, name:"Conspiracy Keanu", img:"static/img/2.png", color:"red"},
+      {id:3, name:"Mini Keanu", img:"static/img/3.png", color:"blue"},
+      {id:4, name:"Eye Roll", img:"static/img/4.png", color:"green"},
+      {id:5, name:"Guard", img:"static/img/5.png", color:"yellow"},
+      {id:6, name:"Pointing Glasses", img:"static/img/6.png", color:"red"},
+      {id:7, name:"Looking Guy", img:"static/img/7.png", color:"blue"},
+      {id:8, name:"Borat Thumbs", img:"static/img/8.png", color:"green"},
+      {id:9, name:"Confused Woman", img:"static/img/9.png", color:"yellow"},
+      {id:10, name:"Smirk", img:"static/img/10.png", color:"red"},
+      {id:11, name:"Roll Safe", img:"static/img/11.png", color:"blue"},
+      {id:12, name:"Gandalf", img:"static/img/12.png", color:"green"},
+      {id:13, name:"Sad Affleck", img:"static/img/13.png", color:"yellow"},
+      {id:14, name:"Tada Man", img:"static/img/14.png", color:"red"},
+      {id:15, name:"Confused Gandalf", img:"static/img/15.png", color:"blue"}
     ];
-
     let myChoice = null, opponentChoice = null, isMyTurn = true, chooseTimerId = null;
-
     const tutorialOverlay = document.getElementById('tutorialOverlay');
     const chooseScreen = document.getElementById('chooseScreen');
     const chooseGrid = document.getElementById('chooseCards');
     const timerDisplay = document.getElementById('timer');
 
-    // Fixed: hide tutorial and show choose screen after 3s
     setTimeout(() => {
       tutorialOverlay.classList.add('hidden');
       tutorialOverlay.style.display = 'none';
-      chooseScreen.classList.add('active'); // show choose screen immediately for testing
-      startChoosePhase(); // start choose phase locally
+      chooseScreen.classList.add('active');
+      startChoosePhase();
     }, 3000);
 
     function startChoosePhase() {
@@ -219,7 +374,6 @@
         btn.onclick = () => showConfirm(m);
         chooseGrid.appendChild(btn);
       });
-
       let time = 10;
       timerDisplay.textContent = `Time remaining: ${time}s`;
       chooseTimerId = setInterval(() => {
@@ -235,7 +389,8 @@
     function showConfirm(meme) {
       document.getElementById('modalImg').src = meme.img;
       document.getElementById('modalName').textContent = meme.name;
-      document.getElementById('modalBg').className = `modal-bg ${meme.color}`;
+      const box = document.getElementById('modalBox');
+      box.className = 'box ' + meme.color; // applies correct color variant
       document.getElementById('confirmModal').classList.add('active');
       window.selectedMeme = meme;
     }
@@ -260,7 +415,6 @@
       document.getElementById('gameplayScreen').classList.add('active');
       document.getElementById('oppImg').src = opponentChoice.img;
       document.getElementById('oppName').textContent = '???';
-
       const grid = document.getElementById('gameGrid');
       grid.innerHTML = '';
       memes.forEach(m => {
@@ -297,23 +451,16 @@
       document.getElementById('turnIndicator').textContent = myTurn ? 'Your turn.' : "Opponent's turn...";
       document.getElementById('chatInput').disabled = !myTurn;
     };
-
     socket.on('turn_update', d => updateTurn(d.current_turn === username));
-
     const makeGuess = id => socket.emit('make_guess', { room_code: roomCode, username, guessed_id: id });
-
     socket.on('guess_result', d => {
       if (d.success) alert('You win! The meme was: ' + d.correct_meme_name);
       else { alert('Wrong guess!'); updateTurn(false); }
     });
-
     document.querySelector('#resetBtn button').onclick = () => {
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
     };
-
     socket.on('game_over', d => alert(`${d.winner} wins! The correct meme was ${d.correct_meme_name}.`));
-
-    // Keep original server-triggered choose phase as fallback
     socket.on('choose_phase_start', () => {
       if (!chooseScreen.classList.contains('active')) {
         chooseScreen.classList.add('active');
