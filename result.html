@@ -111,14 +111,15 @@
         position:relative;
     }
 
-    .sent-icon {
-        width:36px;
-        position:absolute;
-        right:10px;
-        top:12px;
-        transform:rotate(-45deg);
-        cursor:pointer;
-    }
+  .sent-icon {
+    width:15px;
+    position:absolute;
+    right:10px;
+    top:20px; /* moves it down slightly so it's centered */
+    transform:rotate(-45deg);
+    cursor:pointer;
+}
+
 </style>
 
 </head>
@@ -128,7 +129,7 @@
 
     <!-- LEFT -->
     <div class="left-area">
-        <div class="you-won">YOU WON!</div>
+        <div class="you-won" id="resultText">YOU WON!</div>
         <div class="player-1">{{ username }}</div>
 
         <img src="{{ url_for('static', filename='img/golden-medal-first-place-medal-of-sport-competition-cartoon-design-for-poster-icon-card-logo-label-banner-or-sticker-graphic-design-isolated-illustration-vector-removebg-preview-10.png') }}"
@@ -143,40 +144,79 @@
 
     <!-- CHAT -->
     <div class="chat-box">
-        <div class="chat-inner">
-            Enter message...
-            <img src="sent0.png" class="sent-icon" onclick="sendMessage()">
-        </div>
+    <div id="chatMessages" style="
+        background:#1f2937;
+        height:90px;
+        overflow-y:auto;
+        border-radius:10px;
+        padding:10px;
+        font-size:20px;
+    "></div>
+
+    <div class="chat-inner">
+        <input id="chatInput" 
+               placeholder="Enter message..." 
+               style="width:85%; border:none; outline:none; background:none; font-size:22px; color:#4b5563;">
+        <img src="sent0.png" class="sent-icon" onclick="sendMessage()">
     </div>
+</div>
 
 </div>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
 <script>
 const socket = io();
 const playBtn = document.getElementById("playAgainBtn");
 const roomCode = "{{ room_code }}";
 const username = "{{ username }}";
 
+// Elements
+const statusText = document.querySelector(".you-won");
+const playerNameText = document.querySelector(".player-1");
+const medalImg = document.querySelector(".medal-img");
+
+// Default medal images
+const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}"; // 1st place
+const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}"; // 2nd place
+
+// Join game room
+socket.emit('join_game_room', { room_code: roomCode, username });
+
+// Listen for game_over event
+socket.on("game_over", (data) => {
+    if (data.username !== username) return; // Only update for this player
+
+    if (data.result === "win") {
+        statusText.textContent = "YOU WON!";
+        statusText.style.color = "#ffea00";
+        statusText.style.textShadow = "0 0 20px #ffea00";
+        medalImg.src = winMedal;
+    } else {
+    statusText.textContent = "YOU LOST!";
+    statusText.style.color = "#3b82f6";        // blue
+    statusText.style.textShadow = "0 0 20px #3b82f6";
+    medalImg.src = loseMedal;
+   }
+    playerNameText.textContent = username;
+});
+
+// Ready / Play again button logic
 let totalPlayers = 2;
 let playersReady = 0;
 let hasClicked = false;
 
-socket.emit('join_game_room', { room_code: roomCode, username });
-
 socket.on('update_ready_count', (data) => {
     playersReady = data.ready_players;
     playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers}`;
-
     if (playersReady < totalPlayers) {
-      playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
+        playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
     }
 });
 
 function playAgain() {
     if (hasClicked) return;
     hasClicked = true;
-
     socket.emit('player_ready', { room_code: roomCode, username });
     playBtn.style.opacity = "0.7";
 }
@@ -192,9 +232,30 @@ function leaveLobby() {
     window.location.href = "/";
 }
 
+// CHAT SYSTEM
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+
 function sendMessage() {
-    alert("Message sent!");
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    socket.emit("send_chat", {
+        room: roomCode,
+        username: username,
+        message: msg
+    });
+    chatInput.value = "";
 }
+
+socket.on("receive_chat", (data) => {
+    const { username: user, message } = data;
+    const msgDiv = document.createElement("div");
+    msgDiv.style.marginBottom = "6px";
+    msgDiv.innerHTML = `<b>${user}:</b> ${message}`;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
 </script>
 
 </body>
