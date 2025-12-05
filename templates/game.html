@@ -169,11 +169,13 @@
     #sendBtn {
       width: 54px;
       height: 54px;
-      background: transparent;
+      background: #a78bfa;
       border: none;
+      border-radius: 10px;
       cursor: pointer;
+      color: white;
+      font-size: 24px;
     }
-    #sendBtn img { width: 100%; height: 100%; }
 
     .action-buttons {
       position: absolute;
@@ -197,14 +199,18 @@
       color: #fff;
       transition: all .2s;
     }
-    #resetBtn button {
-      background: #de7d4a;
+    #resetBtn {
       left: 192px;
     }
+    #resetBtn button {
+      background: #de7d4a;
+    }
     #resetBtn button:hover { background:#d06d3a; }
+    #guessBtn {
+      left: 542px;
+    }
     #guessBtn button {
       background: #a78bfa;
-      left: 542px;
     }
     #guessBtn button:hover { background:#9370db; }
 
@@ -241,9 +247,7 @@
       </div>
       <form id="messageForm">
         <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
-        <button id="sendBtn" type="submit">
-          <img src="static/img/send-icon.png" alt="Send"/>
-        </button>
+        <button id="sendBtn" type="submit">➤</button>
       </form>
     </div>
 
@@ -289,8 +293,9 @@
     ];
 
     let opponentChoice = null;
-    let isMyTurn = true;
+    let isMyTurn = false;
 
+    // Build the grid
     const grid = document.getElementById('gameGrid');
     memes.forEach(m => {
       const card = document.createElement('div');
@@ -306,6 +311,7 @@
       grid.appendChild(card);
     });
 
+    // Receive opponent's choice
     socket.on('choices_finalized', data => {
       for (const [user, choiceId] of Object.entries(data.choices)) {
         if (user !== username) {
@@ -316,6 +322,7 @@
       }
     });
 
+    // Chat messages
     socket.on('chat_message', d => {
       const div = document.createElement('div');
       div.className = `msg ${d.username === username ? 'you' : 'opponent'}`;
@@ -332,6 +339,7 @@
       input.value = '';
     };
 
+    // Turn management
     const updateTurn = myTurn => {
       isMyTurn = myTurn;
       document.getElementById('turnIndicator').textContent = myTurn ? 'Your turn.' : "Opponent's turn...";
@@ -339,6 +347,7 @@
     };
     socket.on('turn_update', d => updateTurn(d.current_turn === username));
 
+    // Make guess
     const makeGuess = id => {
       socket.emit('make_guess', { room_code: roomCode, username, guessed_id: id });
     };
@@ -346,20 +355,21 @@
     socket.on('guess_result', d => {
       if (d.success) {
         alert(`Correct! You win! It was ${d.correct_meme_name}`);
-        setTimeout(() => location.href = `/result.html?room=${roomCode}&username=${username}`, 2000);
       } else {
         alert('Wrong guess!');
-        updateTurn(false);
       }
     });
 
-    document.getElementById('resetBtn').onclick = () => {
+    // Reset board
+    document.querySelector('#resetBtn button').onclick = () => {
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
     };
 
+    // Game over - redirect to result
     socket.on('game_over', d => {
-      const result = d.winner === username ? 'win' : 'lose';
-      location.href = `/result.html?room=${roomCode}&username=${username}&result=${result}`;
+      setTimeout(() => {
+        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
+      }, 2000);
     });
   </script>
 </body>
