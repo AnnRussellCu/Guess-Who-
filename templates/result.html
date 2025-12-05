@@ -97,7 +97,7 @@
     }
    
 
-    .leave-btn, .join-btn {
+    .leave-btn, .playagain-btn {
       position: absolute;
       width: 275px;
       height: 55px;
@@ -111,8 +111,8 @@
       transition: all 0.3s;
     }
     .leave-btn { top: 325px; left: 1031px; background: #10B981; }
-    .join-btn   { top: 510px; left: 1031px; background: #60A5FA; }
-    .leave-btn.disabled, .join-btn.disabled {
+    .playagain-btn   { top: 510px; left: 1031px; background: #60A5FA; }
+    .leave-btn.disabled, .playagain-btn.disabled {
       background: #4B5563 !important;
       cursor: not-allowed;
       opacity: 0.6;
@@ -141,8 +141,12 @@
     .leave-btn:hover {
     background: #EF4444; /* red on hover */
 }
+.playagain-btn:hover {
+    background: #316ac7; /* lighter blue on hover */
+}
 
-.join-btn.clicked {
+
+.playagain-btn.clicked {
     background: #4B5563 !important; /* grey when clicked */
     cursor: not-allowed;
 }
@@ -231,9 +235,9 @@
 
     
 
-    <div id="join-state" class="box-content">
+    <div id="playagain-state" class="box-content">
  
-      <div class="status" id="joinStatus"></div>
+      <div class="status" id="playagainStatus"></div>
     </div>
   </div>
 
@@ -242,7 +246,7 @@
   </div>
 
   <div class="leave-btn" id="leaveMainBtn">Leave room</div>
-  <div class="join-btn" id="joinMainBtn">Join room (0/2)</div>
+  <div class="playagain-btn" id="playagainMainBtn">Play again (0/2)</div>
 
 </div>
 
@@ -261,7 +265,7 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 const socket = io();
-const playBtn = document.getElementById("joinMainBtn"); // Play Again button
+const playBtn = document.getElementById("playagainMainBtn"); // Play Again button
 const leaveBtn = document.getElementById("leaveMainBtn");
 const roomCode = "{{ room_code }}";
 const username = "{{ username }}";
@@ -275,7 +279,7 @@ const medalImg = document.querySelector(".medal-img");
 const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}";
 const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}";
 
-// Join game room
+// Join game room for Play Again functionality
 socket.emit('join_game_room', { room_code: roomCode, username });
 
 // Update result text on game_over
@@ -352,6 +356,6 @@ window.onclick = (event) => {
 };
 </script>
 
-
 </body>
+
 </html>
