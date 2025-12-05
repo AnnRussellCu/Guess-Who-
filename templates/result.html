@@ -1,187 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>You Won!</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Dokdo&family=Bungee+Inline&display=swap" rel="stylesheet"/>
-
-<style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-
-    body {
-        background:#1E1E2F;
-        font-family:'Dokdo', sans-serif;
-        color:white;
-        height:100vh;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        overflow:hidden;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Result Room</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="globals.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #1E1E2F;
+      color: #fff;
+    }
+    .leave-join-room {
+      width: 1440px;
+      height: 1024px;
+      background: #1E1E2F;
+      position: relative;
     }
 
-    .win-screen {
-        width:1500px;
-        height:850px;
-        background:rgba(255,255,255,0.05);
-        border-radius:25px;
-        border:3px dashed #9ca3af;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        padding:60px;
-        position:relative;
+    .box {
+      position: absolute;
+      top: calc(50% - 350px);
+      left: calc(50% - 598px);
+      width: 833px;
+      height: 554px;
     }
-
+    .box .rectangle {
+      position: absolute;
+      width: 831px;
+      height: 554px;
+      background: #d9d9d91a;
+      border: 3px dashed #9ca3af;
+      border-radius: 20px;
+    }
     .left-area {
-        flex:1;
-        text-align:center;
-    }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+   }
 
-    .you-won {
+
+    .default-text {
+      position: absolute;
+      top: calc(50% - 60px);
+      left: calc(50% - 302px);
+      width: 601px;
+      font-family: 'Dokdo', cursive;
+      font-size: 48px;
+      text-align: center;
+      color: #fff;
+    }
+     .you-won {
         font-family:'Bungee Inline', cursive;
         font-size:90px;
         color:#ffea00;
         text-shadow:0 0 20px #ffea00;
         margin-bottom:10px;
+        margin-top: 25px;
     }
 
-    .player-1 {
+    .player-user {
         font-size:40px;
         opacity:0.9;
         margin-bottom:25px;
     }
-
     .medal-img {
         width:260px;
         margin-top:30px;
     }
 
-    .side-buttons {
-        width:320px;
-        display:flex;
-        flex-direction:column;
-        gap:35px;
+    .back {
+      position: absolute;
+      top: 27px;
+      left: 14px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      cursor: pointer;
+      font-family: 'Bungee Inline';
+      font-size: 32px;
+      color: #fff;
+    }
+   
+
+    .leave-btn, .join-btn {
+      position: absolute;
+      width: 275px;
+      height: 55px;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 55px;
+      font-family: 'Bungee Inline', cursive;
+      font-size: 32px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .leave-btn { top: 325px; left: 1031px; background: #10B981; }
+    .join-btn   { top: 510px; left: 1031px; background: #60A5FA; }
+    .leave-btn.disabled, .join-btn.disabled {
+      background: #4B5563 !important;
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
-    .btn {
-        width:100%;
-        height:70px;
-        background:#a78bfa;
-        border:none;
-        border-radius:14px;
-        font-family:'Bungee Inline', cursive;
-        font-size:32px;
-        color:white;
-        cursor:pointer;
-    }
+    .box-content { display: none; position: absolute; inset: 0; }
+    .box-content.active { display: block; }
 
-    .btn-leave {
-        background:#de7d4a;
+    
+    #create-state .start-btn {
+      position: absolute;
+      top: 460px;
+      left: 278px;
+      width: 275px;
+      height: 55px;
+      background: #10B981;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 55px;
+      font-family: 'Bungee Inline', cursive;
+      font-size: 32px;
+      color: #fff;
+      cursor: pointer;
+      display: none;
     }
-
-    .btn:hover {
-        transform:scale(1.05);
-        transition:0.2s;
-    }
-
-    .chat-box {
-        width:420px;
-        height:180px;
-        background:#374151;
-        border-radius:12px;
-        padding:18px;
-        position:absolute;
-        right:40px;
-        bottom:40px;
-        display:flex;
-        flex-direction:column;
-        justify-content:space-between;
-    }
-
-    .chat-inner {
-        background:#d9d9d9;
-        height:60px;
-        padding:14px;
-        border-radius:10px;
-        color:#4b5563;
-        font-size:22px;
-        position:relative;
-    }
-
-  .sent-icon {
-    width:15px;
-    position:absolute;
-    right:10px;
-    top:20px; /* moves it down slightly so it's centered */
-    transform:rotate(-45deg);
-    cursor:pointer;
+    .leave-btn:hover {
+    background: #EF4444; /* red on hover */
 }
 
-</style>
+.join-btn.clicked {
+    background: #4B5563 !important; /* grey when clicked */
+    cursor: not-allowed;
+}
 
+/* Modal overlay */
+.modal {
+  display: none; /* hidden by default */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 30, 47, 0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modal box */
+.modal-content {
+  background: #1E1E2F;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 0 20px #000;
+}
+
+/* Modal text */
+.modal-text {
+  font-family: 'Bungee Inline', cursive;
+  font-size: 36px;
+  margin-bottom: 30px;
+}
+
+/* Modal buttons */
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.modal-buttons button {
+  font-family: 'Bungee Inline', cursive;
+  font-size: 28px;
+  padding: 10px 30px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+  color: #fff;
+}
+
+#confirmLeaveBtn {
+  background: #EF4444;
+}
+
+#confirmLeaveBtn:hover {
+  background: #DC2626;
+}
+
+#cancelLeaveBtn {
+  background: #10B981;
+}
+
+#cancelLeaveBtn:hover {
+  background: #059669;
+}
+
+
+ 
+  </style>
 </head>
 <body>
 
-<div class="win-screen">
+<div class="leave-join-room">
 
-    <!-- LEFT -->
-    <div class="left-area">
+  <div class="box">
+    <div class="rectangle"></div>
+
+   <div class="left-area">
         <div class="you-won" id="resultText">YOU WON!</div>
-        <div class="player-1">{{ username }}</div>
+        <div class="player-user">{{ username }}</div>
 
-        <img src="{{ url_for('static', filename='img/golden-medal-first-place-medal-of-sport-competition-cartoon-design-for-poster-icon-card-logo-label-banner-or-sticker-graphic-design-isolated-illustration-vector-removebg-preview-10.png') }}"
+        <img src="{{ url_for('static', filename='img/golden-medal.png')}}"
              class="medal-img">
     </div>
 
-    <!-- BUTTONS -->
-    <div class="side-buttons">
-        <button class="btn" id="playAgainBtn" onclick="playAgain()">PLAY AGAIN 0/2</button>
-        <button class="btn btn-leave" onclick="leaveLobby()">LEAVE LOBBY</button>
-    </div>
+    
 
-    <!-- CHAT -->
-    <div class="chat-box">
-    <div id="chatMessages" style="
-        background:#1f2937;
-        height:90px;
-        overflow-y:auto;
-        border-radius:10px;
-        padding:10px;
-        font-size:20px;
-    "></div>
-
-    <div class="chat-inner">
-        <input id="chatInput" 
-               placeholder="Enter message..." 
-               style="width:85%; border:none; outline:none; background:none; font-size:22px; color:#4b5563;">
-        <img src="sent0.png" class="sent-icon" onclick="sendMessage()">
+    <div id="join-state" class="box-content">
+ 
+      <div class="status" id="joinStatus"></div>
     </div>
+  </div>
+
+  <div class="back" onclick="window.location.href='/'">
+    <div>back</div>
+  </div>
+
+  <div class="leave-btn" id="leaveMainBtn" onclick="showCreate()">Leave room</div>
+  <div class="join-btn" id="joinMainBtn" onclick="showJoin()">Join room (0/2)</div>
+
 </div>
 
+<!-- Leave Confirmation Modal -->
+<div id="leaveModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-text">Are you sure you want to leave the game?</div>
+    <div class="modal-buttons">
+      <button id="confirmLeaveBtn">Yes</button>
+      <button id="cancelLeaveBtn">No</button>
+    </div>
+  </div>
 </div>
+
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-
 <script>
 const socket = io();
-const playBtn = document.getElementById("playAgainBtn");
+const playBtn = document.getElementById("joinMainBtn"); // reuse your join button as "Play Again"
+const leaveBtn = document.getElementById("leaveMainBtn");
 const roomCode = "{{ room_code }}";
 const username = "{{ username }}";
 
 // Elements
 const statusText = document.querySelector(".you-won");
-const playerNameText = document.querySelector(".player-1");
+const playerNameText = document.querySelector(".player-user");
 const medalImg = document.querySelector(".medal-img");
 
 // Default medal images
-const winMedal = "{{ url_for('static', filename='img/goldmedal.png') }}";
-const loseMedal = "{{ url_for('static', filename='img/silvermedal.png') }}";
+const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}";
+const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}";
 
-// Join game room
+// Join game room for rematch logic
 socket.emit('join_game_room', { room_code: roomCode, username });
 
-// Listen for game_over event
+// Listen for game_over event to update results
 socket.on("game_over", (data) => {
     if (data.username !== username) return; // Only update for this player
 
@@ -191,11 +290,11 @@ socket.on("game_over", (data) => {
         statusText.style.textShadow = "0 0 20px #ffea00";
         medalImg.src = winMedal;
     } else {
-    statusText.textContent = "YOU LOST!";
-    statusText.style.color = "#3b82f6";        // blue
-    statusText.style.textShadow = "0 0 20px #3b82f6";
-    medalImg.src = loseMedal;
-   }
+        statusText.textContent = "YOU LOST!";
+        statusText.style.color = "#3b82f6";
+        statusText.style.textShadow = "0 0 20px #3b82f6";
+        medalImg.src = loseMedal;
+    }
     playerNameText.textContent = username;
 });
 
@@ -212,52 +311,58 @@ socket.on('update_ready_count', (data) => {
     }
 });
 
-function playAgain() {
+playBtn.onclick = () => {
     if (hasClicked) return;
     hasClicked = true;
     socket.emit('player_ready', { room_code: roomCode, username });
     playBtn.style.opacity = "0.7";
-}
+    playBtn.classList.add('clicked');   
+};
 
+// Start the rematch automatically when all players are ready
 socket.on('start_game', () => {
     playBtn.innerText = "STARTING...";
     setTimeout(() => {
-        window.location.href = `/play.html?room=${roomCode}&username=${username}`;
+        window.location.href = `/play.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
     }, 500);
 });
 
-function leaveLobby() {
+// Get modal elements
+const leaveModal = document.getElementById("leaveModal");
+const confirmLeaveBtn = document.getElementById("confirmLeaveBtn");
+const cancelLeaveBtn = document.getElementById("cancelLeaveBtn");
+
+// Show modal when clicking leave
+leaveBtn.onclick = () => {
+    leaveModal.style.display = "flex";
+};
+
+// Confirm leave
+confirmLeaveBtn.onclick = () => {
+    socket.emit('leave_game', { room_code: roomCode, username });
     window.location.href = "/";
-}
+};
 
-// CHAT SYSTEM
-const chatMessages = document.getElementById("chatMessages");
-const chatInput = document.getElementById("chatInput");
+// Cancel leave
+cancelLeaveBtn.onclick = () => {
+    leaveModal.style.display = "none";
+};
 
-function sendMessage() {
-    const msg = chatInput.value.trim();
-    if (!msg) return;
+// Close modal if clicking outside the box
+window.onclick = (event) => {
+    if (event.target === leaveModal) {
+        leaveModal.style.display = "none";
+    }
+};
 
-    socket.emit("send_chat", {
-        room: roomCode,
-        username: username,
-        message: msg
-    });
-    chatInput.value = "";
-}
-
-socket.on("receive_chat", (data) => {
-    const { username: user, message } = data;
-    const msgDiv = document.createElement("div");
-    msgDiv.style.marginBottom = "6px";
-    msgDiv.innerHTML = `<b>${user}:</b> ${message}`;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+//Confirmation
+  confirmLeaveBtn.addEventListener("click", () => {
+    socket.emit('leave_game', { room_code: roomCode, username });
+    window.location.href = "/";
 });
+
+
 </script>
 
 </body>
 </html>
-
-
-
