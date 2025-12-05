@@ -288,11 +288,11 @@
     }
   });
 
-  // This runs on BOTH players when host clicks Start
-  socket.on('game_started', data => {
+  // When host clicks Start, redirect to play.html with correct username
+  socket.on('redirect_to_game', data => {
     const room = data.room_code;
-    const host = data.host;
-    window.location.href = `/play.html?room=${room}&username=${encodeURIComponent(host)}`;
+    const user = data.username;
+    window.location.href = `/play.html?room=${room}&username=${encodeURIComponent(user)}`;
   });
 </script>
 </body>
