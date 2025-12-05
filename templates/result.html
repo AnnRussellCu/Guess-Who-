@@ -211,11 +211,9 @@
 #cancelLeaveBtn:hover {
   background: #059669;
 }
-
-
- 
   </style>
 </head>
+
 <body>
 
 <div class="leave-join-room">
@@ -243,8 +241,8 @@
     <div>back</div>
   </div>
 
-  <div class="leave-btn" id="leaveMainBtn" onclick="showCreate()">Leave room</div>
-  <div class="join-btn" id="joinMainBtn" onclick="showJoin()">Join room (0/2)</div>
+  <div class="leave-btn" id="leaveMainBtn">Leave room</div>
+  <div class="join-btn" id="joinMainBtn">Join room (0/2)</div>
 
 </div>
 
@@ -299,24 +297,30 @@ socket.on("game_over", (data) => {
 });
 
 // Ready / Play again button logic
-let totalPlayers = 2;
-let playersReady = 0;
-let hasClicked = false;
+let hasClicked = false; // tracks if current player clicked join
+let playersReady = 0;    // current ready count
+const totalPlayers = 2;  // max players
 
+// Update ready count from server
 socket.on('update_ready_count', (data) => {
     playersReady = data.ready_players;
-    playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers}`;
-    if (playersReady < totalPlayers) {
+
+    // Only show "waiting..." if player has clicked but not all ready
+    if (hasClicked && playersReady < totalPlayers) {
         playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
+    } else {
+        playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers}`;
     }
 });
 
 playBtn.onclick = () => {
     if (hasClicked) return;
     hasClicked = true;
+    playersReady = Math.max(playersReady, 1); // show at least 1
     socket.emit('player_ready', { room_code: roomCode, username });
+    playBtn.classList.add('clicked');
     playBtn.style.opacity = "0.7";
-    playBtn.classList.add('clicked');   
+    playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
 };
 
 // Start the rematch automatically when all players are ready
@@ -327,15 +331,13 @@ socket.on('start_game', () => {
     }, 500);
 });
 
-// Get modal elements
+// Modal logic
 const leaveModal = document.getElementById("leaveModal");
 const confirmLeaveBtn = document.getElementById("confirmLeaveBtn");
 const cancelLeaveBtn = document.getElementById("cancelLeaveBtn");
 
 // Show modal when clicking leave
-leaveBtn.onclick = () => {
-    leaveModal.style.display = "flex";
-};
+leaveBtn.onclick = () => leaveModal.style.display = "flex";
 
 // Confirm leave
 confirmLeaveBtn.onclick = () => {
@@ -344,24 +346,12 @@ confirmLeaveBtn.onclick = () => {
 };
 
 // Cancel leave
-cancelLeaveBtn.onclick = () => {
-    leaveModal.style.display = "none";
-};
+cancelLeaveBtn.onclick = () => leaveModal.style.display = "none";
 
 // Close modal if clicking outside the box
 window.onclick = (event) => {
-    if (event.target === leaveModal) {
-        leaveModal.style.display = "none";
-    }
+    if (event.target === leaveModal) leaveModal.style.display = "none";
 };
-
-//Confirmation
-  confirmLeaveBtn.addEventListener("click", () => {
-    socket.emit('leave_game', { room_code: roomCode, username });
-    window.location.href = "/";
-});
-
-
 </script>
 
 </body>
