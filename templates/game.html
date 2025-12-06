@@ -76,9 +76,27 @@
       max-height: 195px;
       position: relative;
       cursor: pointer;
-      transition: transform .2s;
+      transition: all .25s ease;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .game-card:hover { transform: scale(1.05); }
+
+    /* Hover (only when not selected) */
+    .game-card:hover:not(.selected):not(.crossed) {
+      transform: scale(1.08);
+      z-index: 10;
+    }
+
+    /* Selected state - strong visual feedback */
+    .game-card.selected {
+      transform: scale(1.15);
+      z-index: 20;
+      box-shadow: 0 0 30px #a78bfa, inset 0 0 20px rgba(167,139,250,0.4);
+      outline: 5px solid #a78bfa;
+      outline-offset: 4px;
+    }
+
+    /* Crossed out */
     .game-card.crossed {
       opacity: 0.4;
     }
@@ -86,8 +104,9 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><line x1="10" y1="90" x2="90" y2="10" stroke="red" stroke-width="10"/><line x1="10" y1="10" x2="90" y2="90" stroke="red" stroke-width="10"/></svg>') center/80% no-repeat;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><line x1="10" y1="90" x2="90" y2="10" stroke="red" stroke-width="12"/><line x1="10" y1="10" x2="90" y2="90" stroke="red" stroke-width="12"/></svg>') center/85% no-repeat;
     }
+
     .card-bg {
       position: absolute;
       inset: 0;
@@ -104,7 +123,6 @@
       width: 86%;
       height: 67%;
       object-fit: contain;
-      pointer-events: none;
     }
     .card-name {
       position: absolute;
@@ -136,13 +154,9 @@
       color: #fff;
       transition: all .2s;
     }
-    #resetBtn button {
-      background: #de7d4a;
-    }
+    #resetBtn button { background: #de7d4a; }
     #resetBtn button:hover { background:#d06d3a; }
-    #guessBtn button {
-      background: #a78bfa;
-    }
+    #guessBtn button { background: #a78bfa; }
     #guessBtn button:hover { background:#9370db; }
 
     .hint {
@@ -250,24 +264,10 @@
       color: white;
       font-size: clamp(18px, 2vw, 24px);
     }
-
-    /* Scrollbar styling */
-    #chatMessages::-webkit-scrollbar {
-      width: 8px;
-    }
-    #chatMessages::-webkit-scrollbar-track {
-      background: #2d3748;
-      border-radius: 4px;
-    }
-    #chatMessages::-webkit-scrollbar-thumb {
-      background: #a78bfa;
-      border-radius: 4px;
-    }
   </style>
 </head>
 <body>
 
-  <!-- Surrender button -->
   <div class="back" onclick="surrenderGame()">Surrender</div>
 
   <main>
@@ -282,7 +282,7 @@
           <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
         </div>
         
-        <div class="hint">Hint: Double-click a card to cross it out</div>
+        <div class="hint">Hint: Double-click a card to cross it out • Click once to select</div>
       </div>
 
       <div class="right-section">
@@ -301,7 +301,7 @@
           </div>
           <form id="messageForm">
             <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
-            <button id="sendBtn" type="submit">➤</button>
+            <button id="sendBtn" type="submit">Send</button>
           </form>
         </div>
       </div>
@@ -315,8 +315,7 @@
     const roomCode = params.get('room');
     const username = params.get('username');
     const myChoiceId = parseInt(params.get('choice'));
-
-    console.log('🎮 Game page loaded:', { roomCode, username, myChoiceId });
+    let selectedCard = null;
 
     if (!roomCode || !username || !myChoiceId) {
       alert("Missing game data. Returning to menu...");
@@ -343,10 +342,9 @@
       {id:15, name:"Confused Gandalf", img:"/static/img/15.png", color:"blue"}
     ];
 
-    let opponentChoice = null;
     let isMyTurn = false;
 
-    // Display YOUR chosen meme
+    // Show your meme
     const myMeme = memes.find(m => m.id === myChoiceId);
     if (myMeme) {
       document.getElementById('yourCardImg').src = myMeme.img;
@@ -354,7 +352,7 @@
       document.getElementById('yourCardBg').className = `card-bg bg-${myMeme.color}`;
     }
 
-    // Build the grid
+    // Build grid
     const grid = document.getElementById('gameGrid');
     memes.forEach(m => {
       const card = document.createElement('div');
@@ -365,28 +363,56 @@
         <img src="${m.img}" alt="${m.name}"/>
         <div class="card-name">${m.name}</div>
       `;
-      card.ondblclick = () => card.classList.toggle('crossed');
-      card.onclick = () => { if (isMyTurn) makeGuess(m.id); };
+
+      // Double-click = cross out
+      card.ondblclick = (e) => {
+        e.stopPropagation();
+        card.classList.toggle('crossed');
+        if (card.classList.contains('selected')) {
+          card.classList.remove('selected');
+          selectedCard = null;
+        }
+      };
+
+      // Single click = select for guessing
+      card.onclick = () => {
+        if (!isMyTurn) return;
+
+        // Clear previous selection
+        document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+        
+        // Select new one
+        card.classList.add('selected');
+        selectedCard = parseInt(card.dataset.id);
+      };
+
       grid.appendChild(card);
     });
 
-    // Receive opponent's choice (we don't reveal it!)
-    socket.on('choices_finalized', data => {
-      console.log('✅ Choices finalized in game:', data);
-      for (const [user, choiceId] of Object.entries(data.choices)) {
-        if (user !== username) {
-          opponentChoice = memes.find(m => m.id === choiceId);
-          console.log('👤 Opponent choice stored (hidden):', opponentChoice);
-        }
+    // "It's you!" button uses selected card
+    document.querySelector('#guessBtn button').onclick = () => {
+      if (!isMyTurn) return alert("It's not your turn!");
+      if (!selectedCard) return alert("Select a card first!");
+      
+      socket.emit('make_guess', { room_code: roomCode, username, guessed_id: selectedCard });
+      // Clear selection after guess
+      document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+      selectedCard = null;
+    };
+
+    // Turn update
+    socket.on('turn_update', d => {
+      isMyTurn = d.current_turn === username;
+      document.getElementById('turnIndicator').textContent = isMyTurn ? 'Your turn.' : "Opponent's turn...";
+      document.getElementById('chatInput').disabled = !isMyTurn;
+      if (!isMyTurn) {
+        document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+        selectedCard = null;
       }
     });
 
-    // Debug all socket events
-    socket.onAny((eventName, ...args) => {
-      console.log('📡 Game socket event:', eventName, args);
-    });
-
-    // Chat messages
+    // Rest of your existing socket logic (chat, results, etc.) remains unchanged
+    socket.on('choices_finalized', () => {});
     socket.on('chat_message', d => {
       const div = document.createElement('div');
       div.className = `msg ${d.username === username ? 'you' : 'opponent'}`;
@@ -403,43 +429,21 @@
       input.value = '';
     };
 
-    // Turn management
-    const updateTurn = myTurn => {
-      isMyTurn = myTurn;
-      document.getElementById('turnIndicator').textContent = myTurn ? 'Your turn.' : "Opponent's turn...";
-      document.getElementById('chatInput').disabled = !myTurn;
-    };
-    socket.on('turn_update', d => updateTurn(d.current_turn === username));
-
-    // Make guess
-    const makeGuess = id => {
-      if (!isMyTurn) return;
-      socket.emit('make_guess', { room_code: roomCode, username, guessed_id: id });
-    };
-
     socket.on('guess_result', d => {
-      if (d.success) {
-        alert(`Correct! You win! It was ${d.correct_meme_name}`);
-      } else {
-        alert('Wrong guess!');
-      }
+      if (d.success) alert(`Correct! You win! It was ${d.correct_meme_name}`);
+      else alert('Wrong guess!');
     });
 
-    // Reset board
     document.querySelector('#resetBtn button').onclick = () => {
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
     };
 
-    // Game over - redirect to result
-    socket.on('game_over', d => {
-      setTimeout(() => {
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
-      }, 2000);
+    socket.on('game_over', () => {
+      setTimeout(() => location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`, 2000);
     });
 
-    // Surrender function
     function surrenderGame() {
-      if (confirm("Are you sure you want to surrender? You will lose the game.")) {
+      if (confirm("Surrender and lose the game?")) {
         socket.emit('surrender', { room_code: roomCode, username });
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&surrender=true`;
       }
