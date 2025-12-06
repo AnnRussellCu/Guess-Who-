@@ -267,7 +267,8 @@
 </head>
 <body>
 
-  <div class="back" onclick="location.href='/'">Back</div>
+  <!-- Surrender button -->
+  <div class="back" onclick="surrenderGame()">Surrender</div>
 
   <main>
     <h1 id="turnIndicator">Your turn.</h1>
@@ -435,6 +436,14 @@
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
       }, 2000);
     });
+
+    // Surrender function
+    function surrenderGame() {
+      if (confirm("Are you sure you want to surrender? You will lose the game.")) {
+        socket.emit('surrender', { room_code: roomCode, username });
+        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&surrender=true`;
+      }
+    }
   </script>
 </body>
 </html>
