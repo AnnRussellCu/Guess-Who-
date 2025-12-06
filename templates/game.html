@@ -15,50 +15,65 @@
       overflow:hidden;
       display:flex;
       justify-content:center;
-      align-items:flex-start;
+      align-items:center;
     }
     .back {
       position: absolute;
-      top: 27px;
-      left: 14px;
+      top: 1.5vh;
+      left: 1vw;
       display: flex;
-      gap: 7px;
+      gap: 0.5vw;
       align-items: center;
       cursor: pointer;
       font-family: 'Bungee Inline';
-      font-size: 32px;
+      font-size: clamp(18px, 1.8vw, 32px);
       color: #fff;
       z-index: 100;
     }
     .back:hover { opacity:0.8; }
 
     main {
-      width: 1440px;
-      min-height: 1024px;
+      width: 95vw;
+      max-width: 1400px;
+      height: 95vh;
       position: relative;
-      padding: 40px 60px;
+      padding: 2vh 2vw;
+      display: flex;
+      flex-direction: column;
     }
+    
     #turnIndicator {
-      position: absolute;
-      top: 79px;
-      left: 210px;
-      font-size: 64px;
+      font-size: clamp(32px, 4vh, 64px);
       color: #fff;
+      margin-bottom: 2vh;
+      text-align: center;
+    }
+
+    .content-wrapper {
+      display: flex;
+      gap: 2vw;
+      height: 100%;
+    }
+
+    .left-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .game-grid {
-      position: absolute;
-      top: 214px;
-      left: 60px;
-      width: 850px;
       display: grid;
-      grid-template-columns: repeat(5, 152px);
-      grid-template-rows: repeat(3, 195px);
-      gap: 25px 23px;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: clamp(10px, 1.5vh, 25px) clamp(8px, 1vw, 23px);
+      flex: 1;
     }
+    
     .game-card {
-      width: 152px;
-      height: 195px;
+      width: 100%;
+      height: 100%;
+      max-width: 152px;
+      max-height: 195px;
       position: relative;
       cursor: pointer;
       transition: transform .2s;
@@ -84,142 +99,169 @@
     .bg-green  { background:#4ade80; }
     .game-card img {
       position: absolute;
-      top: 15px;
-      left: 11px;
-      width: 130px;
-      height: 130px;
+      top: 10%;
+      left: 7%;
+      width: 86%;
+      height: 67%;
+      object-fit: contain;
       pointer-events: none;
     }
     .card-name {
       position: absolute;
-      bottom: 15px;
+      bottom: 8%;
       left: 0;
       width: 100%;
       text-align: center;
       font-family: 'Bungee Inline', cursive;
       color: #000;
-      font-size: 15px;
+      font-size: clamp(10px, 1vw, 15px);
       pointer-events: none;
     }
 
-    .opponent-area {
-      position: absolute;
-      top: 60px;
-      left: 1012px;
-      width: 378px;
-      height: 195px;
-      display: flex;
-      gap: 31px;
-      align-items: center;
-    }
-    .opponent-info {
-      font-size: 20px;
-      line-height: 1.6;
-      width: 195px;
-    }
-    .target-card {
-      width: 150px;
-      height: 195px;
-      background: #facc15;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .target-card img {
-      width: 130px;
-      height: 130px;
-    }
-
-    .chat-box {
-      position: absolute;
-      top: 291px;
-      left: 973px;
-      width: 421px;
-      height: 680px;
-      background: #374151;
-      border-radius: 10px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-    }
-    #chatMessages {
-      flex: 1;
-      overflow-y: auto;
-      font-size: 24px;
-      margin-bottom: 15px;
-    }
-    .msg { margin: 8px 0; }
-    .msg.you { color: #de7d4a; }
-    .msg.opponent { color: #a78bfa; }
-    .msg.system { color: #fff; }
-    #messageForm {
-      display: flex;
-      gap: 10px;
-    }
-    #chatInput {
-      flex: 1;
-      padding: 12px 15px;
-      background: #d9d9d9;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      outline: none;
-    }
-    #sendBtn {
-      width: 54px;
-      height: 54px;
-      background: #a78bfa;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      color: white;
-      font-size: 24px;
-    }
-
     .action-buttons {
-      position: absolute;
-      top: 901px;
       display: flex;
-      gap: 113px;
+      gap: clamp(20px, 5vw, 113px);
+      justify-content: center;
+      margin-top: 2vh;
     }
-    .action-btn {
-      width: 237px;
-      height: 60px;
-      position: relative;
-    }
+    
     .action-btn button {
-      width: 235px;
-      height: 60px;
+      width: clamp(150px, 15vw, 235px);
+      height: clamp(40px, 5vh, 60px);
       border: none;
       border-radius: 10px;
       cursor: pointer;
       font-family: 'Bungee Inline', cursive;
-      font-size: 24px;
+      font-size: clamp(14px, 1.5vw, 24px);
       color: #fff;
       transition: all .2s;
-    }
-    #resetBtn {
-      left: 192px;
     }
     #resetBtn button {
       background: #de7d4a;
     }
     #resetBtn button:hover { background:#d06d3a; }
-    #guessBtn {
-      left: 542px;
-    }
     #guessBtn button {
       background: #a78bfa;
     }
     #guessBtn button:hover { background:#9370db; }
 
     .hint {
-      position: absolute;
-      top: 1006px;
-      left: 12px;
-      font-size: 15px;
+      text-align: center;
+      margin-top: 1vh;
+      font-size: clamp(12px, 1.2vw, 15px);
       color: #fff;
+    }
+
+    .right-section {
+      width: clamp(300px, 28vw, 421px);
+      display: flex;
+      flex-direction: column;
+      gap: 2vh;
+    }
+
+    .your-card-area {
+      background: rgba(167, 139, 250, 0.15);
+      border: 2px solid #a78bfa;
+      border-radius: 15px;
+      padding: 1.5vh 1vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1vh;
+    }
+    
+    .your-card-title {
+      font-family: 'Bungee Inline';
+      font-size: clamp(16px, 1.8vw, 24px);
+      color: #a78bfa;
+      text-align: center;
+    }
+    
+    .your-card-display {
+      width: clamp(100px, 10vw, 150px);
+      height: clamp(130px, 13vh, 195px);
+      background: #facc15;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .your-card-display .card-bg {
+      border-radius: 15px;
+    }
+    
+    .your-card-display img {
+      width: 85%;
+      height: 65%;
+      object-fit: contain;
+    }
+    
+    .your-card-name {
+      font-family: 'Bungee Inline';
+      font-size: clamp(12px, 1.2vw, 16px);
+      color: #fff;
+      text-align: center;
+    }
+
+    .chat-box {
+      flex: 1;
+      background: #374151;
+      border-radius: 10px;
+      padding: 1.5vh 1vw;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      font-size: clamp(16px, 1.8vw, 24px);
+      margin-bottom: 1vh;
+      min-height: 0;
+    }
+    .msg { margin: 0.5vh 0; }
+    .msg.you { color: #de7d4a; }
+    .msg.opponent { color: #a78bfa; }
+    .msg.system { color: #fff; }
+    
+    #messageForm {
+      display: flex;
+      gap: 1vw;
+    }
+    #chatInput {
+      flex: 1;
+      padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 15px);
+      background: #d9d9d9;
+      border: none;
+      border-radius: 10px;
+      font-size: clamp(14px, 1.4vw, 16px);
+      outline: none;
+    }
+    #sendBtn {
+      width: clamp(40px, 4vw, 54px);
+      height: clamp(40px, 4vw, 54px);
+      background: #a78bfa;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      font-size: clamp(18px, 2vw, 24px);
+    }
+
+    /* Scrollbar styling */
+    #chatMessages::-webkit-scrollbar {
+      width: 8px;
+    }
+    #chatMessages::-webkit-scrollbar-track {
+      background: #2d3748;
+      border-radius: 4px;
+    }
+    #chatMessages::-webkit-scrollbar-thumb {
+      background: #a78bfa;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -230,33 +272,39 @@
   <main>
     <h1 id="turnIndicator">Your turn.</h1>
 
-    <div class="game-grid" id="gameGrid"></div>
-
-    <div class="opponent-area">
-      <div class="opponent-info">
-        Your opponent's meme:<br>
-        <span id="oppName">???</span><br><br>
-        Guess which one it is!
+    <div class="content-wrapper">
+      <div class="left-section">
+        <div class="game-grid" id="gameGrid"></div>
+        
+        <div class="action-buttons">
+          <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
+          <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
+        </div>
+        
+        <div class="hint">Hint: Double-click a card to cross it out</div>
       </div>
-      <div class="target-card"><img id="oppImg" src="" alt=""/></div>
-    </div>
 
-    <div class="chat-box">
-      <div id="chatMessages">
-        <div class="msg system">Game started!</div>
+      <div class="right-section">
+        <div class="your-card-area">
+          <div class="your-card-title">YOUR MEME:</div>
+          <div class="your-card-display" id="yourCard">
+            <div class="card-bg" id="yourCardBg"></div>
+            <img id="yourCardImg" src="" alt=""/>
+          </div>
+          <div class="your-card-name" id="yourCardName"></div>
+        </div>
+
+        <div class="chat-box">
+          <div id="chatMessages">
+            <div class="msg system">Game started!</div>
+          </div>
+          <form id="messageForm">
+            <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
+            <button id="sendBtn" type="submit">➤</button>
+          </form>
+        </div>
       </div>
-      <form id="messageForm">
-        <input type="text" id="chatInput" placeholder="Ask a question..." autocomplete="off"/>
-        <button id="sendBtn" type="submit">➤</button>
-      </form>
     </div>
-
-    <div class="action-buttons">
-      <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
-      <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
-    </div>
-
-    <div class="hint">Hint: Double-click a card to cross it out</div>
   </main>
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
@@ -267,6 +315,8 @@
     const username = params.get('username');
     const myChoiceId = parseInt(params.get('choice'));
 
+    console.log('🎮 Game page loaded:', { roomCode, username, myChoiceId });
+
     if (!roomCode || !username || !myChoiceId) {
       alert("Missing game data. Returning to menu...");
       location.href = '/';
@@ -275,25 +325,33 @@
     socket.emit('join_game_room', { room_code: roomCode, username });
 
     const memes = [
-      {id:1, name:"Doubter", img:"static/img/1.png", color:"yellow"},
-      {id:2, name:"Conspiracy Keanu", img:"static/img/2.png", color:"red"},
-      {id:3, name:"Mini Keanu", img:"static/img/3.png", color:"blue"},
-      {id:4, name:"Eye Roll", img:"static/img/4.png", color:"green"},
-      {id:5, name:"Guard", img:"static/img/5.png", color:"yellow"},
-      {id:6, name:"Pointing Glasses", img:"static/img/6.png", color:"red"},
-      {id:7, name:"Looking Guy", img:"static/img/7.png", color:"blue"},
-      {id:8, name:"Borat Thumbs", img:"static/img/8.png", color:"green"},
-      {id:9, name:"Confused Woman", img:"static/img/9.png", color:"yellow"},
-      {id:10, name:"Smirk", img:"static/img/10.png", color:"red"},
-      {id:11, name:"Roll Safe", img:"static/img/11.png", color:"blue"},
-      {id:12, name:"Gandalf", img:"static/img/12.png", color:"green"},
-      {id:13, name:"Sad Affleck", img:"static/img/13.png", color:"yellow"},
-      {id:14, name:"Tada Man", img:"static/img/14.png", color:"red"},
-      {id:15, name:"Confused Gandalf", img:"static/img/15.png", color:"blue"}
+      {id:1, name:"Doubter", img:"/static/img/1.png", color:"yellow"},
+      {id:2, name:"Conspiracy Keanu", img:"/static/img/2.png", color:"red"},
+      {id:3, name:"Mini Keanu", img:"/static/img/3.png", color:"blue"},
+      {id:4, name:"Eye Roll", img:"/static/img/4.png", color:"green"},
+      {id:5, name:"Guard", img:"/static/img/5.png", color:"yellow"},
+      {id:6, name:"Pointing Glasses", img:"/static/img/6.png", color:"red"},
+      {id:7, name:"Looking Guy", img:"/static/img/7.png", color:"blue"},
+      {id:8, name:"Borat Thumbs", img:"/static/img/8.png", color:"green"},
+      {id:9, name:"Confused Woman", img:"/static/img/9.png", color:"yellow"},
+      {id:10, name:"Smirk", img:"/static/img/10.png", color:"red"},
+      {id:11, name:"Roll Safe", img:"/static/img/11.png", color:"blue"},
+      {id:12, name:"Gandalf", img:"/static/img/12.png", color:"green"},
+      {id:13, name:"Sad Affleck", img:"/static/img/13.png", color:"yellow"},
+      {id:14, name:"Tada Man", img:"/static/img/14.png", color:"red"},
+      {id:15, name:"Confused Gandalf", img:"/static/img/15.png", color:"blue"}
     ];
 
     let opponentChoice = null;
     let isMyTurn = false;
+
+    // Display YOUR chosen meme
+    const myMeme = memes.find(m => m.id === myChoiceId);
+    if (myMeme) {
+      document.getElementById('yourCardImg').src = myMeme.img;
+      document.getElementById('yourCardName').textContent = myMeme.name;
+      document.getElementById('yourCardBg').className = `card-bg bg-${myMeme.color}`;
+    }
 
     // Build the grid
     const grid = document.getElementById('gameGrid');
@@ -311,15 +369,20 @@
       grid.appendChild(card);
     });
 
-    // Receive opponent's choice
+    // Receive opponent's choice (we don't reveal it!)
     socket.on('choices_finalized', data => {
+      console.log('✅ Choices finalized in game:', data);
       for (const [user, choiceId] of Object.entries(data.choices)) {
         if (user !== username) {
           opponentChoice = memes.find(m => m.id === choiceId);
-          document.getElementById('oppImg').src = opponentChoice.img;
-          document.getElementById('oppName').textContent = '???';
+          console.log('👤 Opponent choice stored (hidden):', opponentChoice);
         }
       }
+    });
+
+    // Debug all socket events
+    socket.onAny((eventName, ...args) => {
+      console.log('📡 Game socket event:', eventName, args);
     });
 
     // Chat messages
@@ -349,6 +412,7 @@
 
     // Make guess
     const makeGuess = id => {
+      if (!isMyTurn) return;
       socket.emit('make_guess', { room_code: roomCode, username, guessed_id: id });
     };
 

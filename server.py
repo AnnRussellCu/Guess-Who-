@@ -114,7 +114,13 @@ def handle_join_game_room(data):
     room_code = data['room_code']
     username = data['username']
 
+    print(f"[JOIN] {username} joining game room {room_code}")
     join_room(room_code)
+    
+    # Re-add player to room if they're not there (e.g., after page reload)
+    if room_code in rooms and username not in rooms[room_code]:
+        rooms[room_code].append(username)
+        print(f"[JOIN] Re-added {username} to room {room_code}")
 
     if room_code in rooms:
         emit('update_players', rooms[room_code], room=room_code)
@@ -154,12 +160,17 @@ def handle_player_ready(data):
     room_code = data.get('room_code')
     username = data.get('username')
     
+    print(f"[READY] {username} is ready in room {room_code}")
+    
     if room_code not in rooms:
+        print(f"[READY] ERROR: Room {room_code} not found!")
         return
     
     if room_code not in ready_players:
         ready_players[room_code] = set()
     ready_players[room_code].add(username)
+    
+    print(f"[READY] {len(ready_players[room_code])}/{len(rooms[room_code])} players ready")
     
     # Emit ready count update
     socketio.emit('update_ready_count', {
@@ -169,6 +180,7 @@ def handle_player_ready(data):
     # Start choose phase only when BOTH players are ready
     if len(ready_players[room_code]) == len(rooms[room_code]) and room_code not in player_choices:
         player_choices[room_code] = {}
+        print(f"[CHOOSE] Starting choose phase for room {room_code}")
         socketio.emit('choose_phase_start', room=room_code)
         
         # Start 10s auto-timeout
@@ -178,6 +190,7 @@ def handle_player_ready(data):
             timer = Timer(10.0, finish_choose_phase, args=[room_code])
             active_timers[room_code] = timer
             timer.start()
+            print(f"[TIMER] 10s timer started for room {room_code}")
 
 
 # ---------------------
@@ -190,13 +203,24 @@ def player_chose(data):
     user = data['username']
     choice = int(data['choice'])
 
+    print(f"[CHOICE] {user} chose meme {choice} in room {room}")
+
+    # Safety check: ensure room exists
+    if room not in rooms:
+        print(f"[CHOICE] ERROR: Room {room} not found in rooms!")
+        return
+
     if room not in player_choices:
         player_choices[room] = {}
 
     player_choices[room][user] = choice
 
+    print(f"[CHOICE] Current choices in {room}: {player_choices[room]}")
+    print(f"[CHOICE] {len(player_choices[room])}/{len(rooms[room])} players have chosen")
+
     # If both players have chosen before 10s → finish early
-    if room in rooms and len(player_choices[room]) == len(rooms[room]):
+    if len(player_choices[room]) == len(rooms[room]):
+        print(f"[CHOICE] All players chose! Finishing early...")
         with timer_lock:
             if room in active_timers:
                 active_timers[room].cancel()
@@ -209,39 +233,66 @@ def player_chose(data):
 # ---------------------
 
 def finish_choose_phase(room_code):
-    if room_code not in rooms or room_code not in player_choices:
+    print(f"\n[FINISH] ========== FINISHING CHOOSE PHASE ==========")
+    print(f"[FINISH] Room: {room_code}")
+    
+    if room_code not in rooms:
+        print(f"[FINISH] ERROR: Room {room_code} not found in rooms")
+        return
+        
+    if room_code not in player_choices:
+        print(f"[FINISH] ERROR: Room {room_code} not found in player_choices")
         return
 
     players = rooms[room_code]
+    print(f"[FINISH] Players: {players}")
 
     # Assign random selection for players who did NOT choose
     for p in players:
         if p not in player_choices[room_code]:
-            player_choices[room_code][p] = random.randint(1, 15)
+            random_choice = random.randint(1, 15)
+            player_choices[room_code][p] = random_choice
+            print(f"[FINISH] Assigned random choice {random_choice} to {p}")
 
-    # Send final choices to both clients
+    print(f"[FINISH] Final choices: {player_choices[room_code]}")
+
+    # Send final choices to both clients FIRST
+    print(f"[FINISH] Emitting choices_finalized...")
     socketio.emit('choices_finalized', {
         'choices': player_choices[room_code]
     }, room=room_code)
 
     # Set initial turn (first player)
     current_turns[room_code] = players[0]
+    print(f"[FINISH] Initial turn: {current_turns[room_code]}")
+    
+    # Small delay to ensure choices_finalized is received
+    socketio.sleep(0.5)
+    
+    # Redirect both players to game.html with their choice
+    print(f"[FINISH] Redirecting players to game.html...")
+    for p in players:
+        choice = player_choices[room_code][p]
+        redirect_data = {
+            'room_code': room_code,
+            'username': p,
+            'choice': choice
+        }
+        print(f"[FINISH] → Sending redirect to {p}: {redirect_data}")
+        socketio.emit('redirect_to_gameplay', redirect_data, room=room_code)
+
+    # Send turn update
+    print(f"[FINISH] Emitting turn_update...")
     socketio.emit('turn_update', {
         'current_turn': current_turns[room_code]
     }, room=room_code)
-
-    # Redirect both players to game.html with their choice
-    for p in players:
-        socketio.emit('redirect_to_gameplay', {
-            'room_code': room_code,
-            'username': p,
-            'choice': player_choices[room_code][p]
-        }, room=room_code)
 
     # Clean up timer reference
     with timer_lock:
         if room_code in active_timers:
             del active_timers[room_code]
+    
+    print(f"[FINISH] ========== CHOOSE PHASE COMPLETE ==========\n")
 
 
 # ---------------------
@@ -351,4 +402,4 @@ def get_meme_name(meme_id):
 # ---------------------
 
 if __name__ == '__main__':
-    socketio.run(app, host='127.0.0.1', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
