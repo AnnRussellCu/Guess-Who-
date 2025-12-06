@@ -377,13 +377,22 @@
       // Single click = select for guessing
       card.onclick = () => {
         if (!isMyTurn) return;
+        
+        // If clicking the same card, deselect it
+        if (card.classList.contains('selected')) {
+          card.classList.remove('selected');
+          selectedCard = null;
+          return;
+        }
 
         // Clear previous selection
         document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
         
-        // Select new one
-        card.classList.add('selected');
-        selectedCard = parseInt(card.dataset.id);
+        // Select new one (only if not crossed out)
+        if (!card.classList.contains('crossed')) {
+          card.classList.add('selected');
+          selectedCard = parseInt(card.dataset.id);
+        }
       };
 
       grid.appendChild(card);
