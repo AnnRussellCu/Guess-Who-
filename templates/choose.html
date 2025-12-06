@@ -406,10 +406,23 @@
       });
     };
 
-    // Listen for redirect to gameplay after both players chose (or timer ended)
+    // Listen for redirect with turn information
     socket.on('redirect_to_gameplay', data => {
       console.log('🎮 REDIRECT EVENT RECEIVED:', data);
-      const url = `/game.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}&choice=${data.choice}`;
+      
+      // Server should provide first_turn in the data
+      const firstTurnPlayer = data.first_turn;
+      
+      if (!firstTurnPlayer) {
+        console.error('❌ No first_turn provided by server!');
+        // Fallback: just redirect without turn parameter and let server handle it
+        const url = `/game.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}&choice=${data.choice}`;
+        console.log('🎮 Redirecting without turn:', url);
+        window.location.href = url;
+        return;
+      }
+      
+      const url = `/game.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}&choice=${data.choice}&turn=${encodeURIComponent(firstTurnPlayer)}`;
       console.log('🎮 Redirecting to:', url);
       window.location.href = url;
     });
