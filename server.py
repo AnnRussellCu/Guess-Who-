@@ -27,6 +27,9 @@ current_turns = {}
 # map username -> sid so we can send events to a specific connection
 player_sids = {}
 
+# { room_code: { username: wrong_guess_count } } to track wrong guesses
+wrong_guesses = {}
+
 
 # ---------------------
 # ROUTES
@@ -302,6 +305,10 @@ def finish_choose_phase(room_code):
 
     print(f"[FINISH] Final choices: {player_choices[room_code]}")
 
+    # Initialize wrong guess tracking for this room
+    wrong_guesses[room_code] = {player: 0 for player in players}
+    print(f"[FINISH] Initialized wrong guess tracking: {wrong_guesses[room_code]}")
+
     # Send final choices to both clients FIRST
     print(f"[FINISH] Emitting choices_finalized...")
     socketio.emit('choices_finalized', {
@@ -325,7 +332,7 @@ def finish_choose_phase(room_code):
                 'room_code': room_code,
                 'username': info['username'],
                 'choice': info['choice'],
-                'first_turn': first_turn_player  # ← CRITICAL: Added first_turn parameter
+                'first_turn': first_turn_player
             }
             socketio.emit('redirect_to_gameplay', redirect_data, to=sid)
             print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']} with first_turn={first_turn_player}")
@@ -368,6 +375,8 @@ def handle_make_guess(data):
     username = data['username']
     guessed_id = int(data['guessed_id'])
     
+    print(f"[GUESS] {username} guessed meme {guessed_id} in room {room_code}")
+    
     if room_code not in player_choices or room_code not in rooms:
         return
     
@@ -395,9 +404,11 @@ def handle_make_guess(data):
     # Check if guess is correct
     if guessed_id == opponent_choice:
         # Winner!
+        print(f"[GUESS] ✅ Correct! {username} wins!")
         emit('guess_result', {
             'success': True,
             'guesser': username,
+            'guessed_id': guessed_id,
             'correct_meme_name': get_meme_name(opponent_choice)
         }, room=room_code)
         
@@ -408,12 +419,30 @@ def handle_make_guess(data):
         }, room=room_code)
         
     else:
-        # Wrong guess, switch turn
-        emit('guess_result', {
-            'success': False,
-            'guesser': username
-        }, room=room_code)
+        # Wrong guess - increment counter
+        if room_code in wrong_guesses:
+            wrong_guesses[room_code][username] = wrong_guesses[room_code].get(username, 0) + 1
+            wrong_count = wrong_guesses[room_code][username]
+            print(f"[GUESS] ❌ Wrong! {username} now has {wrong_count}/3 wrong guesses")
+            
+            emit('guess_result', {
+                'success': False,
+                'guesser': username,
+                'guessed_id': guessed_id,
+                'wrong_count': wrong_count
+            }, room=room_code)
+            
+            # Check if player reached 3 wrong guesses
+            if wrong_count >= 3:
+                print(f"[GUESS] 🏁 {username} lost! 3 wrong guesses reached")
+                socketio.emit('game_over', {
+                    'winner': opponent,
+                    'loser': username,
+                    'reason': 'too_many_wrong_guesses'
+                }, room=room_code)
+                return
         
+        # Switch turn
         current_turns[room_code] = opponent
         socketio.emit('turn_update', {
             'current_turn': current_turns[room_code]
@@ -485,6 +514,8 @@ def handle_leave_game(data):
                 del ready_players[room_code]
             if room_code in current_turns:
                 del current_turns[room_code]
+            if room_code in wrong_guesses:
+                del wrong_guesses[room_code]
         else:
             emit('update_players', rooms[room_code], room=room_code)
 

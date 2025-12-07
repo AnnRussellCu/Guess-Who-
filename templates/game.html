@@ -82,14 +82,8 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
-    /* Disable interaction during opponent's turn */
-    .game-card.disabled {
-      pointer-events: none;
-      cursor: not-allowed;
-    }
-
-    /* Hover (only when not selected and it's your turn) */
-    .game-card:hover:not(.selected):not(.crossed):not(.disabled) {
+    /* Hover for all cards */
+    .game-card:hover:not(.selected):not(.crossed) {
       transform: scale(1.08);
       z-index: 10;
     }
@@ -276,11 +270,6 @@
       outline: none;
     }
     
-    #chatInput:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
     #chatInput::placeholder {
       color: #37415180;
     }
@@ -297,13 +286,8 @@
       transition: all .2s;
     }
     
-    #sendBtn:hover:not(:disabled) {
+    #sendBtn:hover {
       background: #9370db;
-    }
-    
-    #sendBtn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
   </style>
 </head>
@@ -356,18 +340,15 @@
     const roomCode = params.get('room');
     const username = params.get('username');
     const myChoiceId = parseInt(params.get('choice'));
-    const firstTurn = params.get('turn'); // Get whose turn it is from URL
+    const firstTurn = params.get('turn');
     let selectedCard = null;
     let isMyTurn = false;
     let opponentUsername = null;
     let turnInitialized = false;
+    let myWrongGuesses = 0; // Track my wrong guesses
 
     console.log('🎮 ===== GAME.HTML LOADED =====');
     console.log('📋 URL Parameters:', { roomCode, username, myChoiceId, firstTurn });
-    console.log('🔍 firstTurn value:', firstTurn);
-    console.log('🔍 firstTurn type:', typeof firstTurn);
-    console.log('🔍 username value:', username);
-    console.log('🔍 Are they equal?', firstTurn === username);
 
     if (!roomCode || !username || !myChoiceId) {
       console.error('❌ Missing required parameters!');
@@ -376,7 +357,6 @@
     }
 
     console.log('✅ All required parameters present');
-    console.log('📡 Emitting join_game_room...');
     socket.emit('join_game_room', { room_code: roomCode, username });
 
     const memes = [
@@ -417,9 +397,8 @@
         <div class="card-name">${m.name}</div>
       `;
 
-      // Double-click = cross out (only during your turn)
+      // Double-click = cross out (ANYTIME - no turn restriction)
       card.ondblclick = (e) => {
-        if (!isMyTurn) return;
         e.stopPropagation();
         card.classList.toggle('crossed');
         if (card.classList.contains('selected')) {
@@ -465,98 +444,51 @@
       isMyTurn = myTurnNow;
       turnInitialized = true;
       
-      console.log('✅ turnInitialized set to:', turnInitialized);
-      console.log('✅ isMyTurn set to:', isMyTurn);
-      
       // Update turn indicator with actual username
       const indicator = document.getElementById('turnIndicator');
       if (isMyTurn) {
         indicator.textContent = 'Your turn.';
-        console.log('✅ Set indicator to: "Your turn."');
       } else {
         indicator.textContent = `${currentPlayer}'s turn.`;
-        console.log(`✅ Set indicator to: "${currentPlayer}'s turn."`);
       }
       
-      // Enable/disable cards
-      document.querySelectorAll('.game-card').forEach(card => {
-        if (isMyTurn) {
-          card.classList.remove('disabled');
-        } else {
-          card.classList.add('disabled');
-        }
-      });
-      console.log('✅ Cards enabled/disabled based on turn');
-      
-      // Enable/disable buttons
+      // Only disable guess button based on turn
       guessBtn.disabled = !isMyTurn;
-      resetBtn.disabled = !isMyTurn;
-      console.log('✅ Buttons state:', { guessBtn: !guessBtn.disabled, resetBtn: !resetBtn.disabled });
-      
-      // Enable/disable chat input
-      chatInput.disabled = !isMyTurn;
-      sendBtn.disabled = !isMyTurn;
-      console.log('✅ Chat state:', { input: !chatInput.disabled, sendBtn: !sendBtn.disabled });
       
       // Clear selection if it's not your turn
       if (!isMyTurn) {
         document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
         selectedCard = null;
-        console.log('🧹 Cleared selection (not your turn)');
       }
       
-      console.log('🔄 ===== UPDATE TURN UI COMPLETE =====');
+      console.log('✅ Turn UI updated');
     }
 
     // Initialize turn from URL parameter if available
     if (firstTurn) {
-      console.log('🎯 ===== INITIALIZING TURN FROM URL =====');
-      console.log('🔍 firstTurn exists:', firstTurn);
-      console.log('🔍 Comparing:', { firstTurn, username });
+      console.log('🎯 Initializing turn from URL');
       const initialTurn = firstTurn === username;
-      console.log('🔍 initialTurn result:', initialTurn);
-      console.log('📞 Calling updateTurnUI...');
       updateTurnUI(initialTurn, firstTurn);
-      console.log('✅ Turn initialized from URL');
     } else {
-      console.log('⚠️ ===== NO TURN PARAMETER IN URL =====');
-      console.log('⏳ Waiting for server turn_update event...');
-      // Start with everything disabled
+      console.log('⚠️ No turn parameter in URL');
       guessBtn.disabled = true;
-      resetBtn.disabled = true;
-      chatInput.disabled = true;
-      sendBtn.disabled = true;
-      document.querySelectorAll('.game-card').forEach(card => {
-        card.classList.add('disabled');
-      });
-      console.log('🔒 All UI elements disabled, waiting for server...');
     }
 
-    // Turn update from server (fallback or for turn changes)
+    // Turn update from server
     socket.on('turn_update', data => {
-      console.log('📡 ===== RECEIVED turn_update EVENT =====');
-      console.log('📦 Data:', data);
-      console.log('🔍 current_turn:', data.current_turn);
-      console.log('🔍 Comparing with username:', username);
-      console.log('🔍 Match:', data.current_turn === username);
+      console.log('📡 Received turn_update:', data);
       updateTurnUI(data.current_turn === username, data.current_turn);
-      console.log('✅ turn_update processed');
     });
 
     // Request turn update if not initialized after 2 seconds
     setTimeout(() => {
-      console.log('⏰ ===== 2-SECOND TIMEOUT CHECK =====');
-      console.log('🔍 turnInitialized:', turnInitialized);
       if (!turnInitialized) {
-        console.log('⚠️ Turn still not initialized!');
-        console.log('📤 Emitting request_turn_update...');
+        console.log('⚠️ Requesting turn update from server');
         socket.emit('request_turn_update', { room_code: roomCode });
-      } else {
-        console.log('✅ Turn already initialized, no action needed');
       }
     }, 2000);
 
-    // "It's you!" button uses selected card
+    // "It's you!" button
     guessBtn.onclick = () => {
       if (!isMyTurn) {
         alert("It's not your turn!");
@@ -567,19 +499,21 @@
         return;
       }
       
+      console.log('🎯 Making guess:', selectedCard);
       socket.emit('make_guess', { room_code: roomCode, username, guessed_id: selectedCard });
+      
       // Clear selection after guess
       document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
       selectedCard = null;
     };
 
-    // Reset board button
+    // Reset board button (ANYTIME - no turn restriction)
     resetBtn.onclick = () => {
-      if (!isMyTurn) return;
+      console.log('🔄 Resetting board');
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
     };
 
-    // Chat functionality
+    // Chat functionality (ANYTIME - no turn restriction)
     socket.on('chat_message', data => {
       console.log('💬 Received chat_message:', data);
       const div = document.createElement('div');
@@ -594,10 +528,7 @@
 
     document.getElementById('messageForm').onsubmit = e => {
       e.preventDefault();
-      if (!chatInput.value.trim() || !isMyTurn) {
-        console.log('⚠️ Cannot send message:', { hasValue: !!chatInput.value.trim(), isMyTurn });
-        return;
-      }
+      if (!chatInput.value.trim()) return;
       
       console.log('📤 Sending chat message:', chatInput.value.trim());
       socket.emit('chat_message', { 
@@ -611,16 +542,47 @@
     // Guess result
     socket.on('guess_result', data => {
       console.log('🎯 Received guess_result:', data);
+      
       if (data.success) {
         alert(`Correct! ${data.guesser} wins! It was ${data.correct_meme_name}`);
       } else {
-        alert(`Wrong guess by ${data.guesser}!`);
+        // Auto-cross the wrong guess
+        if (data.guessed_id) {
+          const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
+          if (wrongCard && !wrongCard.classList.contains('crossed')) {
+            wrongCard.classList.add('crossed');
+            console.log('❌ Auto-crossed wrong guess:', data.guessed_id);
+          }
+        }
+        
+        // Track wrong guesses
+        if (data.guesser === username) {
+          myWrongGuesses++;
+          console.log(`❌ Wrong guesses: ${myWrongGuesses}/3`);
+          alert(`Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
+        } else {
+          alert(`Wrong guess by ${data.guesser}!`);
+        }
       }
     });
 
     // Game over
     socket.on('game_over', data => {
       console.log('🏁 Game over:', data);
+      
+      let message = '';
+      if (data.reason === 'surrender') {
+        message = `${data.winner} wins! Opponent surrendered.`;
+      } else if (data.reason === 'too_many_wrong_guesses') {
+        message = `${data.winner} wins! ${data.loser} made 3 wrong guesses.`;
+      } else if (data.correct_meme_name) {
+        message = `${data.winner} wins! It was ${data.correct_meme_name}`;
+      } else {
+        message = `${data.winner} wins!`;
+      }
+      
+      alert(message);
+      
       setTimeout(() => {
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
       }, 2000);
