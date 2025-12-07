@@ -260,8 +260,6 @@ def player_chose(data):
         finish_choose_phase(room)
 
 
-
-
 # ---------------------
 # FINISH CHOOSE PHASE
 # ---------------------
@@ -281,12 +279,26 @@ def finish_choose_phase(room_code):
     players = rooms[room_code]
     print(f"[FINISH] Players: {players}")
 
+    # Get all usernames who already chose
+    chosen_usernames = set()
+    for sid, info in player_choices[room_code].items():
+        if isinstance(info, dict) and 'username' in info:
+            chosen_usernames.add(info['username'])
+
     # Assign random selection for players who did NOT choose
-    for p in players:
-        if p not in player_choices[room_code]:
+    for player_name in players:
+        if player_name not in chosen_usernames:
             random_choice = random.randint(1, 15)
-            player_choices[room_code][p] = random_choice
-            print(f"[FINISH] Assigned random choice {random_choice} to {p}")
+            # Find this player's SID
+            player_sid = player_sids.get(player_name)
+            if player_sid:
+                player_choices[room_code][player_sid] = {
+                    'username': player_name,
+                    'choice': random_choice
+                }
+                print(f"[FINISH] Assigned random choice {random_choice} to {player_name}")
+            else:
+                print(f"[FINISH] WARNING: Could not find SID for {player_name}")
 
     print(f"[FINISH] Final choices: {player_choices[room_code]}")
 
@@ -297,36 +309,28 @@ def finish_choose_phase(room_code):
     }, room=room_code)
 
     # Set initial turn (first player)
-    current_turns[room_code] = players[0]
-    print(f"[FINISH] Initial turn: {current_turns[room_code]}")
+    first_turn_player = players[0]
+    current_turns[room_code] = first_turn_player
+    print(f"[FINISH] Initial turn: {first_turn_player}")
     
     # Small delay to ensure choices_finalized is received
     socketio.sleep(0.5)
     
-    # Redirect both players to game.html with their choice — send to each player's SID
+    # Redirect both players to game.html with their choice AND first_turn
     print(f"[FINISH] Redirecting players to game.html...")
 
     for sid, info in player_choices[room_code].items():
-        if sid:  # optional check, can remove if you know sid exists
+        if isinstance(info, dict) and 'username' in info:
             redirect_data = {
                 'room_code': room_code,
                 'username': info['username'],
-                'choice': info['choice']
+                'choice': info['choice'],
+                'first_turn': first_turn_player  # ← CRITICAL: Added first_turn parameter
             }
             socketio.emit('redirect_to_gameplay', redirect_data, to=sid)
-            print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']}")
+            print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']} with first_turn={first_turn_player}")
         else:
-            # fallback: emit to room (rare case if client hasn't rejoined yet)
-            redirect_data = {
-                'room_code': room_code,
-                'username': info['username'],
-                'choice': info['choice']
-            }
-            socketio.emit('redirect_to_gameplay', redirect_data, room=room_code)
-            print(f"[FINISH] → SID missing for {info['username']}; fallback broadcast to room")
-
-
-
+            print(f"[FINISH] → Skipping invalid entry: {sid}: {info}")
 
     # Send turn update
     print(f"[FINISH] Emitting turn_update...")
@@ -377,32 +381,78 @@ def handle_make_guess(data):
     if not opponent:
         return
     
-    opponent_choice = player_choices[room_code][opponent]
+    # Find opponent's choice from player_choices
+    opponent_choice = None
+    for sid, info in player_choices[room_code].items():
+        if isinstance(info, dict) and info.get('username') == opponent:
+            opponent_choice = info['choice']
+            break
+    
+    if opponent_choice is None:
+        print(f"[GUESS] ERROR: Could not find opponent's choice")
+        return
     
     # Check if guess is correct
     if guessed_id == opponent_choice:
         # Winner!
         emit('guess_result', {
             'success': True,
+            'guesser': username,
             'correct_meme_name': get_meme_name(opponent_choice)
-        }, to=request.sid)
+        }, room=room_code)
         
         # Send game over to both
         socketio.emit('game_over', {
             'winner': username,
-            'correct_meme_name': get_meme_name(opponent_choice),
-            'result': 'win' if username == username else 'lose'
+            'correct_meme_name': get_meme_name(opponent_choice)
         }, room=room_code)
         
     else:
         # Wrong guess, switch turn
         emit('guess_result', {
-            'success': False
-        }, to=request.sid)
+            'success': False,
+            'guesser': username
+        }, room=room_code)
         
         current_turns[room_code] = opponent
         socketio.emit('turn_update', {
             'current_turn': current_turns[room_code]
+        }, room=room_code)
+
+
+@socketio.on('request_turn_update')
+def handle_request_turn_update(data):
+    room_code = data.get('room_code')
+    print(f"[TURN] Turn update requested for room {room_code}")
+    
+    if room_code in current_turns:
+        emit('turn_update', {
+            'current_turn': current_turns[room_code]
+        }, to=request.sid)
+        print(f"[TURN] Sent turn update: {current_turns[room_code]}")
+    else:
+        print(f"[TURN] WARNING: No turn data for room {room_code}")
+
+
+@socketio.on('surrender')
+def handle_surrender(data):
+    room_code = data['room_code']
+    username = data['username']
+    
+    if room_code not in rooms:
+        return
+    
+    # Find opponent
+    opponent = None
+    for player in rooms[room_code]:
+        if player != username:
+            opponent = player
+            break
+    
+    if opponent:
+        socketio.emit('game_over', {
+            'winner': opponent,
+            'reason': 'surrender'
         }, room=room_code)
 
 
@@ -437,6 +487,28 @@ def handle_leave_game(data):
                 del current_turns[room_code]
         else:
             emit('update_players', rooms[room_code], room=room_code)
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f"[DISCONNECT] Client disconnected: {request.sid}")
+    
+    # Find which player disconnected
+    disconnected_username = None
+    for username, sid in player_sids.items():
+        if sid == request.sid:
+            disconnected_username = username
+            break
+    
+    if disconnected_username:
+        # Find which room they were in
+        for room_code, players in rooms.items():
+            if disconnected_username in players:
+                print(f"[DISCONNECT] {disconnected_username} disconnected from room {room_code}")
+                socketio.emit('player_disconnected', {
+                    'username': disconnected_username
+                }, room=room_code)
+                break
 
 
 # ---------------------

@@ -6,35 +6,40 @@
   <title>Create / Join Room</title>
   <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="globals.css">
-  <link rel="stylesheet" href="style.css">
   <style>
-    html, body {
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
       height: 100%;
       overflow: hidden;
       background: #1E1E2F;
       color: #fff;
+      font-family: 'Dokdo', cursive;
     }
+
     .create-join-room {
-      width: 1440px;
-      height: 1024px;
+      width: 100%;
+      height: 100%;
       background: #1E1E2F;
       position: relative;
     }
 
     .box {
       position: absolute;
-      top: calc(50% - 350px);
-      left: calc(50% - 598px);
-      width: 833px;
-      height: 554px;
+      top: 50%;
+      left: 35%;
+      transform: translate(-50%, -50%);
+      width: min(90vw, 831px);
+      height: min(70vh, 554px);
     }
+
     .box .rectangle {
-      position: absolute;
-      width: 831px;
-      height: 554px;
+      width: 100%;
+      height: 100%;
       background: #d9d9d91a;
       border: 3px dashed #9ca3af;
       border-radius: 20px;
@@ -42,126 +47,273 @@
 
     .default-text {
       position: absolute;
-      top: calc(50% - 60px);
-      left: calc(50% - 302px);
-      width: 601px;
-      font-family: 'Dokdo', cursive;
-      font-size: 48px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      font-size: clamp(24px, 5vw, 48px);
       text-align: center;
       color: #fff;
     }
 
     .back {
       position: absolute;
-      top: 27px;
-      left: 14px;
+      top: clamp(20px, 3vh, 27px);
+      left: clamp(10px, 2vw, 14px);
       display: flex;
       gap: 7px;
       align-items: center;
       cursor: pointer;
       font-family: 'Bungee Inline';
-      font-size: 32px;
+      font-size: clamp(20px, 3vw, 32px);
       color: #fff;
+      z-index: 10;
     }
-   
 
     .create-btn, .join-btn {
       position: absolute;
-      width: 275px;
-      height: 55px;
+      width: clamp(200px, 19vw, 275px);
+      height: clamp(45px, 5.4vh, 55px);
       border-radius: 10px;
       text-align: center;
-      line-height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: 'Bungee Inline', cursive;
-      font-size: 32px;
+      font-size: clamp(18px, 2.2vw, 32px);
       color: #fff;
       cursor: pointer;
       transition: all 0.3s;
     }
-    .create-btn { top: 325px; left: 1031px; background: #10B981; }
-    .join-btn   { top: 510px; left: 1031px; background: #60A5FA; }
+
+    .create-btn {
+      top: clamp(250px, 38vh, 325px);
+      left: clamp(900px, 71.6vw, 1031px);
+      background: #10B981;
+    }
+
+    .join-btn {
+      top: clamp(400px, 56vh, 510px);
+      left: clamp(900px, 71.6vw, 1031px);
+      background: #60A5FA;
+    }
+
     .create-btn.disabled, .join-btn.disabled {
       background: #4B5563 !important;
       cursor: not-allowed;
       opacity: 0.6;
     }
 
-    .box-content { display: none; position: absolute; inset: 0; }
-    .box-content.active { display: block; }
+    .box-content {
+      display: none;
+      position: absolute;
+      inset: 0;
+      padding: clamp(20px, 5vw, 40px);
+    }
+
+    .box-content.active {
+      display: block;
+    }
 
     /* Create room */
-    #create-state .code-box { position: absolute; top: 197px; left: 241px; width: 350px; height: 100px; background: #a78bfa; border-radius: 20px; }
-    #create-state .room-code { position: absolute; top: 20px; left: 73px; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
-    #create-state .copy-btn { position: absolute; top: 30px; left: 291px; width: 40px; height: 40px; cursor: pointer; }
-    #create-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
-    #create-state .players { position: absolute; top: 350px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 32px; color: #fff; line-height: 1.4; }
+    #create-state .code-box {
+      position: absolute;
+      top: clamp(120px, 40%, 197px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(80%, 350px);
+      height: clamp(80px, 12vh, 100px);
+      background: #a78bfa;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    #create-state .room-code {
+      font-size: clamp(32px, 5vw, 48px);
+      color: #fff;
+    }
+
+    #create-state .copy-btn {
+      width: clamp(30px, 5vw, 40px);
+      height: clamp(30px, 5vw, 40px);
+      cursor: pointer;
+    }
+
+    #create-state .msg {
+      position: absolute;
+      top: clamp(60px, 8%, 70px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      text-align: center;
+      font-size: clamp(24px, 4vw, 48px);
+      color: #fff;
+    }
+
+    #create-state .players {
+      position: absolute;
+      top: clamp(280px, 70%, 350px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      text-align: center;
+      font-size: clamp(20px, 3vw, 32px);
+      color: #fff;
+      line-height: 1.6;
+    }
+
     #create-state .start-btn {
       position: absolute;
-      top: 460px;
-      left: 278px;
-      width: 275px;
-      height: 55px;
+      bottom: clamp(40px, 10%, 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(80%, 275px);
+      height: clamp(45px, 6vh, 55px);
       background: #10B981;
       border-radius: 10px;
-      text-align: center;
-      line-height: 55px;
+      display: none;
+      align-items: center;
+      justify-content: center;
       font-family: 'Bungee Inline', cursive;
-      font-size: 32px;
+      font-size: clamp(18px, 2.5vw, 32px);
       color: #fff;
       cursor: pointer;
-      display: none;
     }
-    #create-state .start-btn.visible { display: block; }
+
+    #create-state .start-btn.visible {
+      display: flex;
+    }
 
     /* Join room */
     #join-state input {
       position: absolute;
-      top: 197px;
-      left: 241px;
-      width: 350px;
-      height: 100px;
+      top: clamp(120px, 40%, 197px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(80%, 350px);
+      height: clamp(80px, 12vh, 100px);
       background: #de7d4a;
       border: none;
       border-radius: 20px;
       text-align: center;
       font-family: 'Dokdo', cursive;
-      font-size: 48px;
+      font-size: clamp(32px, 5vw, 48px);
       color: #fff;
       caret-color: #fff;
     }
-    #join-state input::placeholder { color: #ffffff99; }
-    #join-state .msg { position: absolute; top: 70px; left: 107px; width: 617px; text-align: center; font-family: 'Dokdo', cursive; font-size: 48px; color: #fff; }
+
+    #join-state input::placeholder {
+      color: #ffffff99;
+    }
+
+    #join-state .msg {
+      position: absolute;
+      top: clamp(60px, 8%, 70px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      text-align: center;
+      font-size: clamp(24px, 4vw, 48px);
+      color: #fff;
+    }
+
     #join-state .join-action {
       position: absolute;
-      top: 443px;
-      left: 278px;
-      width: 275px;
-      height: 55px;
+      bottom: clamp(40px, 10%, 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(80%, 275px);
+      height: clamp(45px, 6vh, 55px);
       background: #60a5fa;
       border-radius: 10px;
-      text-align: center;
-      line-height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: 'Bungee Inline', cursive;
-      font-size: 32px;
+      font-size: clamp(18px, 2.5vw, 32px);
       color: #fff;
       cursor: pointer;
       transition: all 0.3s;
     }
+
     #join-state .join-action.disabled {
       background: #4B5563;
       cursor: not-allowed;
       opacity: 0.6;
     }
+
     #join-state .status {
       position: absolute;
-      top: 380px;
-      left: 107px;
-      width: 617px;
+      top: clamp(280px, 70%, 380px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
       text-align: center;
-      font-family: 'Dokdo', cursive;
-      font-size: 32px;
+      font-size: clamp(20px, 3vw, 32px);
       color: #fff;
-      line-height: 1.4;
+      line-height: 1.6;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 1200px) {
+      .box {
+        left: 50%;
+      }
+
+      .create-btn, .join-btn {
+        left: auto;
+        right: 5vw;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .create-join-room {
+        padding: 1rem;
+      }
+
+      .box {
+        width: 90vw;
+        left: 50%;
+      }
+
+      .create-btn, .join-btn {
+        position: relative;
+        right: auto;
+        left: auto;
+        top: auto;
+        margin: 0.5rem auto;
+        width: min(90%, 275px);
+      }
+
+      .button-container {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        z-index: 10;
+      }
+
+      .back {
+        font-size: 20px;
+      }
+    }
+
+    @media (max-height: 600px) {
+      #create-state .msg,
+      #join-state .msg {
+        font-size: clamp(18px, 3vw, 32px);
+      }
+
+      #create-state .code-box,
+      #join-state input {
+        height: 70px;
+      }
     }
   </style>
 </head>
@@ -192,7 +344,7 @@
     </div>
   </div>
 
-  <div class="back" onclick="window.location.href='/'">
+  <div class="back" onclick="goBack()">
     <div>back</div>
   </div>
 
@@ -203,8 +355,7 @@
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
-    const socket = io(); // connect to same origin (prevents IP/origin mismatches)
-
+  const socket = io();
   const username = "{{ username }}";
   const defaultText = document.querySelector('.default-text');
   const playersList = document.getElementById('playersList');
@@ -216,6 +367,10 @@
 
   let isHost = false;
   let currentRoomCode = null;
+
+  function goBack() {
+    window.location.href = '/';
+  }
 
   function disableMainButtons() {
     createMainBtn.classList.add('disabled');
@@ -289,11 +444,9 @@
     }
   });
 
-  // When host clicks Start, redirect to play.html with correct username
-    socket.on('redirect_to_game', data => {
+  socket.on('redirect_to_game', data => {
     const room = data.room_code;
     const user = data.username;
-    // use relative path so we stay on same origin (avoids IP mismatch)
     window.location.href = `/choose.html?room=${room}&username=${encodeURIComponent(user)}`;
   });
 </script>
