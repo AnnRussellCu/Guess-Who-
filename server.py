@@ -24,6 +24,9 @@ ready_players = {}
 # { room_code: username } to track current turn
 current_turns = {}
 
+# map username -> sid so we can send events to a specific connection
+player_sids = {}
+
 
 # ---------------------
 # ROUTES
@@ -83,6 +86,12 @@ def handle_create_room(data):
     rooms[room_code] = [username]
     join_room(room_code)
 
+    # store this player's sid
+    try:
+        player_sids[username] = request.sid
+    except Exception:
+        pass
+
     emit('room_created', room_code)
     emit('update_players', rooms[room_code], room=room_code)
 
@@ -105,6 +114,12 @@ def handle_join_room(data):
 
     join_room(room_code)
 
+    # store this player's sid
+    try:
+        player_sids[username] = request.sid
+    except Exception:
+        pass
+
     emit('update_players', rooms[room_code], room=room_code)
     emit('join_result', {'success': True, 'host': rooms[room_code][0]}, to=request.sid)
 
@@ -117,6 +132,12 @@ def handle_join_game_room(data):
     print(f"[JOIN] {username} joining game room {room_code}")
     join_room(room_code)
     
+    # store this player's sid (so we can redirect to their connection later)
+    try:
+        player_sids[username] = request.sid
+    except Exception:
+        pass
+
     # Re-add player to room if they're not there (e.g., after page reload)
     if room_code in rooms and username not in rooms[room_code]:
         rooms[room_code].append(username)
@@ -205,7 +226,6 @@ def player_chose(data):
 
     print(f"[CHOICE] {user} chose meme {choice} in room {room}")
 
-    # Safety check: ensure room exists
     if room not in rooms:
         print(f"[CHOICE] ERROR: Room {room} not found in rooms!")
         return
@@ -213,12 +233,24 @@ def player_chose(data):
     if room not in player_choices:
         player_choices[room] = {}
 
-    player_choices[room][user] = choice
+    # Store choice in SID-based dict
+    player_choices[room][request.sid] = {
+        'username': user,
+        'choice': choice
+    }
+
+    # Prevent duplicate memes
+    taken_choices = set(info['choice'] for info in player_choices[room].values())
+    if choice in taken_choices and list(taken_choices).count(choice) > 1:
+        available = set(range(1, 16)) - taken_choices
+        choice = random.choice(list(available))
+        # update choice after reassigning
+        player_choices[room][request.sid]['choice'] = choice
+        print(f"[CHOICE] Meme already taken, assigning random available meme {choice} to {user}")
 
     print(f"[CHOICE] Current choices in {room}: {player_choices[room]}")
     print(f"[CHOICE] {len(player_choices[room])}/{len(rooms[room])} players have chosen")
 
-    # If both players have chosen before 10s → finish early
     if len(player_choices[room]) == len(rooms[room]):
         print(f"[CHOICE] All players chose! Finishing early...")
         with timer_lock:
@@ -226,6 +258,8 @@ def player_chose(data):
                 active_timers[room].cancel()
                 del active_timers[room]
         finish_choose_phase(room)
+
+
 
 
 # ---------------------
@@ -269,17 +303,30 @@ def finish_choose_phase(room_code):
     # Small delay to ensure choices_finalized is received
     socketio.sleep(0.5)
     
-    # Redirect both players to game.html with their choice
+    # Redirect both players to game.html with their choice — send to each player's SID
     print(f"[FINISH] Redirecting players to game.html...")
-    for p in players:
-        choice = player_choices[room_code][p]
-        redirect_data = {
-            'room_code': room_code,
-            'username': p,
-            'choice': choice
-        }
-        print(f"[FINISH] → Sending redirect to {p}: {redirect_data}")
-        socketio.emit('redirect_to_gameplay', redirect_data, room=room_code)
+
+    for sid, info in player_choices[room_code].items():
+        if sid:  # optional check, can remove if you know sid exists
+            redirect_data = {
+                'room_code': room_code,
+                'username': info['username'],
+                'choice': info['choice']
+            }
+            socketio.emit('redirect_to_gameplay', redirect_data, to=sid)
+            print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']}")
+        else:
+            # fallback: emit to room (rare case if client hasn't rejoined yet)
+            redirect_data = {
+                'room_code': room_code,
+                'username': info['username'],
+                'choice': info['choice']
+            }
+            socketio.emit('redirect_to_gameplay', redirect_data, room=room_code)
+            print(f"[FINISH] → SID missing for {info['username']}; fallback broadcast to room")
+
+
+
 
     # Send turn update
     print(f"[FINISH] Emitting turn_update...")
@@ -370,6 +417,13 @@ def handle_leave_game(data):
     
     if room_code in rooms and username in rooms[room_code]:
         rooms[room_code].remove(username)
+        
+        # remove stored sid for this player
+        if username in player_sids:
+            try:
+                del player_sids[username]
+            except KeyError:
+                pass
         
         if len(rooms[room_code]) == 0:
             # Clean up room

@@ -252,17 +252,36 @@
     </div>
   </div>
 
+  
+
+
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
     const socket = io();
     const params = new URLSearchParams(location.search);
     const roomCode = params.get('room') || 'TEST';
-    const username = params.get('username') || 'Player';
+    const username = (params.get('username') || 'Player').trim();
 
     console.log('Choose screen loaded:', { roomCode, username });
 
-    socket.emit('join_game_room', { room_code: roomCode, username });
-    socket.emit('player_ready', { room_code: roomCode, username });
+        // Wait until socket is connected before telling the server we joined and are ready.
+        socket.on('connect', () => {
+        console.log('socket connected, id=', socket.id);
+
+        // Join the game room
+        socket.emit('join_game_room', { room_code: roomCode, username });
+
+        // Only after server confirms the player is in the room, emit ready
+        socket.once('update_players', players => {
+          if (players.includes(username)) {
+            console.log('✅ Confirmed in room, now emitting player_ready', { room_code: roomCode, username });
+            socket.emit('player_ready', { room_code: roomCode, username });
+          }
+        });
+      });
+
+
+
 
     const memes = [
       {id:1, name:"Doubter", img:"/static/img/1.png", color:"yellow"},
@@ -406,6 +425,19 @@
       });
     };
 
+    
+
+    socket.on('choose_phase_start', () => {
+      console.log("🎉 CHOOSE PHASE STARTED!");
+      document.getElementById("waiting").style.display = "none";
+      document.getElementById("cards").style.display = "grid";
+    });
+
+    // Receive when both players have chosen
+    socket.on('both_players_chosen', data => {
+      console.log('🎯 Both chosen:', data);
+    });
+
     // Listen for redirect with turn information
     socket.on('redirect_to_gameplay', data => {
       console.log('🎮 REDIRECT EVENT RECEIVED:', data);
@@ -422,7 +454,7 @@
         return;
       }
       
-      const url = `/game.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}&choice=${data.choice}&turn=${encodeURIComponent(firstTurnPlayer)}`;
+      const url = `/game.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}&choice=${data.choice}`;
       console.log('🎮 Redirecting to:', url);
       window.location.href = url;
     });
