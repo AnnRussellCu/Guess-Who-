@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>How to Play — Guess Who</title>
+<link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
+
+<style>
+  html,body {
+    margin:0;
+    padding:0;
+    height:100%;
+    background:#1E1E2F;
+    font-family:'Dokdo', cursive;
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .main-container {
+    width: 1200px;
+    margin: 3rem auto;
+    display:flex;
+    flex-direction:column;
+    gap: 2rem;
+  }
+
+  /* Title (matching your page) */
+  .title {
+    text-align:center;
+    font-family: 'Dokdo', cursive;
+    font-size:90px;
+    margin: 0;
+    color: #a78bfa;
+    text-shadow: 0 0 20px #a78bfa88;
+  }
+
+  .content {
+    display:flex;
+    gap:2.5rem;
+    align-items:flex-start;
+  }
+
+  /* LEFT: instruction panel */
+  .instructions {
+    flex:2;
+    background: rgba(45,45,55,0.25);
+    border-radius:20px;
+    padding: 28px;
+    border: 3px dashed #9ca3af;
+    min-height: 560px;
+    position:relative;
+  }
+
+  .section-title {
+    font-family: 'Bungee Inline', cursive;
+    color: #fff;
+    font-size: 36px;
+    margin-bottom: 12px;
+    text-align:left;
+  }
+
+  .step {
+    display:flex;
+    gap:18px;
+    align-items:flex-start;
+    margin: 18px 0;
+  }
+
+  .step .step-num {
+    min-width:56px;
+    min-height:56px;
+    border-radius:12px;
+    background:#a78bfa;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Bungee Inline',cursive;
+    font-size:22px;
+    color:#fff;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  }
+
+  .step .step-body {
+    flex:1;
+  }
+
+  .step .step-body h3 {
+    margin:0;
+    font-size:20px;
+    color:#fff;
+    font-family:'Bungee Inline',cursive;
+  }
+
+  .step .step-body p {
+    margin:6px 0 0 0;
+    font-size:16px;
+    color:#e6e6e6;
+    line-height:1.45;
+  }
+
+  .tips {
+    margin-top:18px;
+    padding:14px;
+    background:rgba(0,0,0,0.15);
+    border-radius:12px;
+    font-size:15px;
+    color:#f3f4f6;
+  }
+
+  /* RIGHT: visual example + controls */
+  .sidebar {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    align-items:center;
+    justify-content:flex-start;
+  }
+
+  .example-box {
+    width:100%;
+    background:#2C2C3C;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    text-align:center;
+  }
+
+  .example-title {
+    font-family:'Bungee Inline',cursive;
+    font-size:22px;
+    margin-bottom:12px;
+  }
+
+  .cards-grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    justify-items:center;
+  }
+
+  .mini-card {
+    width:110px;
+    height:140px;
+    border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:'Bungee Inline',cursive;
+    font-size:14px;
+    color:#000;
+  }
+  .mini-card img { width:86px; height:86px; margin-bottom:6px; }
+
+  .mini-1 { background:#DE7E4A; }
+  .mini-2 { background:#60A5FA; }
+  .mini-3 { background:#FACC15; }
+
+  .controls {
+    width:100%;
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:center;
+  }
+
+  .button {
+    border-radius:10px;
+    color:white;
+    font-family: 'Bungee Inline', cursive;
+    text-align:center;
+    cursor:pointer;
+  }
+  #start-btn { 
+    width:240px; 
+    padding:1.05rem;
+    font-size:1.9rem; 
+    background:#10B981; 
+  }
+  #back-btn { 
+    width:160px; 
+    padding:0.7rem;
+    font-size:1.15rem; 
+    background:#60A5FA; 
+  }
+
+  /* Footer small note */
+  .footer-note {
+    margin-top:12px;
+    font-size:13px;
+    color:#cbd5e1;
+    text-align:center;
+    opacity:0.9;
+  }
+
+  /* small responsive tweak */
+  @media (max-width:1250px){
+    .main-container { width: min(95%, 1050px); }
+    .content { flex-direction:column; align-items:center; }
+    .sidebar { width:100%; max-width:420px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="main-container">
+
+  <div class="title">GUESS WHO — HOW TO PLAY</div>
+
+  <div class="content">
+
+    <!-- LEFT: instructions -->
+    <div class="instructions">
+      <div class="section-title">Objective</div>
+      <p style="color:#e6e6e6; font-size:16px; margin-top:8px;">
+        Guess which character your opponent secretly picked by asking yes/no questions and eliminating suspects.
+        You win when you correctly identify their character before they identify yours.
+      </p>
+
+      <div class="section-title" style="margin-top:18px; font-size:32px;">Steps</div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Pick a character</h3>
+          <p>During the selection phase, choose one character secretly. Only you can see your choice.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Ask yes/no questions</h3>
+          <p>On your turn send a yes/no question (e.g., "Does your character wear glasses?"). Your opponent answers honestly.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Eliminate cards</h3>
+          <p>If the answer excludes some characters, cross them out on your board. This helps narrow down the possibilities.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Make a guess</h3>
+          <p>When you think you know who it is, pick a character and submit a guess. If correct — you win. If wrong — your turn ends.</p>
+        </div>
+      </div>
+
+      <div class="tips">
+        <strong>Tips</strong>
+        <ul style="margin:8px 0 0 18px; color:#f3f4f6;">
+          <li>Start with broad questions that split the board roughly in half.</li>
+          <li>Keep track of both what you asked and what you learned.</li>
+          <li>Use elimination (double-click/cross) to remember excluded characters.</li>
+        </ul>
+      </div>
+
+      <div class="footer-note">This web version supports 2 players over the network. Use the room system to invite friends.</div>
+    </div>
+
+    <!-- RIGHT: visual example + controls -->
+    <div class="sidebar">
+      <div class="example-box">
+        <div class="example-title">Example Board</div>
+        <div class="cards-grid" style="margin-bottom:12px;">
+          <div class="mini-card mini-1"><img src="static/img/1.png" alt="">Alice</div>
+          <div class="mini-card mini-2"><img src="static/img/2.png" alt="">Bob</div>
+          <div class="mini-card mini-3"><img src="static/img/3.png" alt="">Charlie</div>
+        </div>
+        <div style="font-size:14px; color:#d1d5db;">Double-click a card to cross it out once eliminated.</div>
+      </div>
+
+      <div class="controls">
+        <div id="back-btn" class="button" onclick="location.href='/'">Back to Home</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // small UI interactions (same style as your other pages)
+  document.getElementById('start-btn').addEventListener('click', () => {
+    // same behavior as your main page: show the name modal or go to /room
+    const name = prompt("Enter your name to create a room:");
+    if (name && name.trim()) {
+      window.location.href = `/room?username=${encodeURIComponent(name.trim())}`;
+    }
+  });
+
+  // allow clicking example mini-cards to toggle "crossed" visual (local only)
+  document.querySelectorAll('.mini-card').forEach(card => {
+    card.addEventListener('dblclick', () => {
+      card.style.opacity = card.style.opacity === '0.4' ? '1' : '0.4';
+      card.style.textDecoration = card.style.textDecoration === 'line-through' ? 'none' : 'line-through';
+    });
+  });
+</script>
+
+</body>
+</html>
