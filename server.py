@@ -71,7 +71,9 @@ def result_page():
         return "Missing parameters", 400
     return render_template('result.html', room_code=room_code, username=username)
 
-
+@app.route('/instructions')
+def instructions_page():
+    return render_template('instructions.html') #for instructions.html
 # ---------------------
 # ROOM CREATION / JOIN
 # ---------------------
