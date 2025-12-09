@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit, join_room
 import random
 import string
 from threading import Timer, Lock
+import re
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -29,6 +30,65 @@ player_sids = {}
 
 # { room_code: { username: wrong_guess_count } } to track wrong guesses
 wrong_guesses = {}
+
+
+# ---------------------
+# QUESTION FILTERING
+# ---------------------
+
+# Banned words that give away colors or direct attributes
+BANNED_WORDS = [
+    'red', 'blue', 'green', 'yellow',
+    'color', 'colour', 'colored', 'coloured',
+    'top left', 'top right', 'bottom left', 'bottom right',
+    'first row', 'second row', 'third row',
+    'first column', 'second column', 'third column', 'fourth column', 'fifth column',
+    'position', 'corner', 'middle', 'center', 'centre'
+]
+
+# Words that indicate non-yes/no questions
+NON_YES_NO_INDICATORS = [
+    'what', 'which', 'where', 'when', 'who', 'whom', 'whose', 'how', 'why'
+]
+
+def filter_question(message):
+    """
+    Returns (is_valid, error_message)
+    is_valid = True if question passes all filters
+    error_message = reason for rejection if invalid
+    """
+    message_lower = message.lower().strip()
+    
+    # Must end with question mark
+    if not message.endswith('?'):
+        return False, "Questions must end with a question mark (?)"
+    
+    # No multiple sentences
+    sentence_count = message.count('?') + message.count('.') + message.count('!')
+    if sentence_count > 1:
+        return False, "Only one question at a time!"
+    
+    # Check for banned words (color-related)
+    for word in BANNED_WORDS:
+        # Use word boundaries to avoid false positives
+        pattern = r'\b' + re.escape(word) + r'\b'
+        if re.search(pattern, message_lower):
+            return False, f"Don't ask about obvious attributes like colors or positions!"
+    
+    # Check for non-yes/no question indicators
+    words = message_lower.split()
+    if words and words[0] in NON_YES_NO_INDICATORS:
+        return False, "Only YES or NO questions allowed!"
+    
+    # Check if question is too short (likely not meaningful)
+    if len(words) < 2:
+        return False, "Question is too short. Be more specific!"
+    
+    # Check if question is too long (might be trying to bypass filters)
+    if len(words) > 20:
+        return False, "Question is too long. Keep it simple!"
+    
+    return True, ""
 
 
 # ---------------------
@@ -73,7 +133,9 @@ def result_page():
 
 @app.route('/instructions')
 def instructions_page():
-    return render_template('instructions.html') #for instructions.html
+    return render_template('instructions.html')
+
+
 # ---------------------
 # ROOM CREATION / JOIN
 # ---------------------
@@ -365,10 +427,31 @@ def handle_chat_message(data):
     username = data['username']
     message = data['message']
     
+    print(f"[CHAT] {username} in {room_code}: {message}")
+    
+    # Only filter questions if it's the sender's turn (they're asking)
+    # If it's NOT their turn, they're answering, so allow any message
+    if room_code in current_turns and current_turns[room_code] == username:
+        # It's their turn - they're asking a question, so filter it
+        is_valid, error_message = filter_question(message)
+        
+        if not is_valid:
+            # Send error only to the sender
+            emit('question_rejected', {
+                'reason': error_message
+            }, to=request.sid)
+            print(f"[CHAT] Question rejected: {error_message}")
+            return
+    else:
+        # It's NOT their turn - they're answering, so allow any message
+        print(f"[CHAT] Answer from {username} (not their turn)")
+    
+    # If valid (or if they're answering), broadcast to room
     emit('chat_message', {
         'username': username,
         'message': message
     }, room=room_code)
+    print(f"[CHAT] Message accepted and broadcasted")
 
 
 @socketio.on('make_guess')
@@ -463,6 +546,45 @@ def handle_request_turn_update(data):
         print(f"[TURN] Sent turn update: {current_turns[room_code]}")
     else:
         print(f"[TURN] WARNING: No turn data for room {room_code}")
+
+
+@socketio.on('skip_turn')
+def handle_skip_turn(data):
+    room_code = data['room_code']
+    username = data['username']
+    
+    print(f"[SKIP] {username} skipping turn in room {room_code}")
+    
+    if room_code not in current_turns or room_code not in rooms:
+        return
+    
+    # Check if it's actually this player's turn
+    if current_turns[room_code] != username:
+        print(f"[SKIP] ERROR: Not {username}'s turn")
+        return
+    
+    # Find opponent
+    opponent = None
+    for player in rooms[room_code]:
+        if player != username:
+            opponent = player
+            break
+    
+    if opponent:
+        # Switch turn to opponent
+        current_turns[room_code] = opponent
+        print(f"[SKIP] Turn switched to {opponent}")
+        
+        # Broadcast turn update
+        socketio.emit('turn_update', {
+            'current_turn': current_turns[room_code]
+        }, room=room_code)
+        
+        # Optional: Send a chat message notification
+        socketio.emit('chat_message', {
+            'username': 'System',
+            'message': f'{username} skipped their turn'
+        }, room=room_code)
 
 
 @socketio.on('surrender')

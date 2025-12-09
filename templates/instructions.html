@@ -10,7 +10,7 @@
   html,body {
     margin:0;
     padding:0;
-    height:100%;
+    min-height:100%;
     background:#1E1E2F;
     font-family:'Dokdo', cursive;
     color:#fff;
@@ -18,15 +18,35 @@
     -moz-osx-font-smoothing:grayscale;
   }
 
+  /* Back button - matching other pages */
+  .back {
+    position: fixed;
+    top: 27px;
+    left: 14px;
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    cursor: pointer;
+    font-family: 'Bungee Inline';
+    font-size: 32px;
+    color: #fff;
+    z-index: 100;
+    transition: opacity 0.2s;
+  }
+  
+  .back:hover {
+    opacity: 0.8;
+  }
+
   .main-container {
     width: 1200px;
-    margin: 3rem auto;
+    margin: 3rem auto 4rem auto;
     display:flex;
     flex-direction:column;
     gap: 2rem;
   }
 
-  /* Title (matching your page) */
+  /* Title */
   .title {
     text-align:center;
     font-family: 'Dokdo', cursive;
@@ -50,7 +70,6 @@
     padding: 28px;
     border: 3px dashed #9ca3af;
     min-height: 560px;
-    position:relative;
   }
 
   .section-title {
@@ -109,88 +128,92 @@
     color:#f3f4f6;
   }
 
-  /* RIGHT: visual example + controls */
+  /* RIGHT: rules box */
   .sidebar {
     flex:1;
     display:flex;
     flex-direction:column;
-    gap:18px;
-    align-items:center;
-    justify-content:flex-start;
   }
 
-  .example-box {
+  /* Rules box */
+  .rules-box {
     width:100%;
-    background:#2C2C3C;
+    background:#374151;
     border-radius:16px;
-    padding:18px;
+    padding:20px;
     box-shadow:0 10px 30px rgba(0,0,0,0.4);
-    text-align:center;
+    text-align:left;
   }
 
-  .example-title {
+  .rules-title {
     font-family:'Bungee Inline',cursive;
     font-size:22px;
-    margin-bottom:12px;
-  }
-
-  .cards-grid {
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    justify-items:center;
-  }
-
-  .mini-card {
-    width:110px;
-    height:140px;
-    border-radius:12px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    font-family:'Bungee Inline',cursive;
-    font-size:14px;
-    color:#000;
-  }
-  .mini-card img { width:86px; height:86px; margin-bottom:6px; }
-
-  .mini-1 { background:#DE7E4A; }
-  .mini-2 { background:#60A5FA; }
-  .mini-3 { background:#FACC15; }
-
-  .controls {
-    width:100%;
-    margin-top:12px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    align-items:center;
-  }
-
-  .button {
-    border-radius:10px;
-    color:white;
-    font-family: 'Bungee Inline', cursive;
+    margin-bottom:14px;
+    color:#10B981;
     text-align:center;
-    cursor:pointer;
   }
-  #start-btn { 
-    width:240px; 
-    padding:1.05rem;
-    font-size:1.9rem; 
-    background:#10B981; 
+
+  .rule-item {
+    margin: 12px 0;
+    padding-left: 8px;
   }
-  #back-btn { 
-    width:160px; 
-    padding:0.7rem;
-    font-size:1.15rem; 
-    background:#60A5FA; 
+
+  .rule-item strong {
+    color:#a78bfa;
+    font-family:'Bungee Inline',cursive;
+    font-size:15px;
+  }
+
+  .rule-item p {
+    margin:4px 0 0 0;
+    font-size:15px;
+    line-height:1.4;
+    color:#e5e7eb;
+  }
+
+  .question-examples {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+  }
+
+  .question-examples h4 {
+    margin: 0 0 10px 0;
+    font-family:'Bungee Inline',cursive;
+    font-size: 16px;
+  }
+
+  .example-q {
+    margin: 8px 0;
+    padding-left: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .example-q.good {
+    color: #6ee7b7;
+  }
+
+  .example-q.good::before {
+    content: "✓ ";
+    color: #10B981;
+    font-weight: bold;
+  }
+
+  .example-q.bad {
+    color: #fca5a5;
+  }
+
+  .example-q.bad::before {
+    content: "✗ ";
+    color: #ef4444;
+    font-weight: bold;
   }
 
   /* Footer small note */
   .footer-note {
-    margin-top:12px;
+    margin-top:16px;
     font-size:13px;
     color:#cbd5e1;
     text-align:center;
@@ -207,6 +230,11 @@
 </style>
 </head>
 <body>
+
+<!-- Back button - matching other pages -->
+<div class="back" onclick="location.href='/'">
+  <div>back</div>
+</div>
 
 <div class="main-container">
 
@@ -252,7 +280,7 @@
         <div class="step-num">4</div>
         <div class="step-body">
           <h3>Make a guess</h3>
-          <p>When you think you know who it is, pick a character and submit a guess. If correct — you win. If wrong — your turn ends.</p>
+          <p>When you think you know who it is, pick a character and submit a guess. If correct — you win. If wrong — your turn ends and you lose a life (3 wrong guesses = you lose).</p>
         </div>
       </div>
 
@@ -262,54 +290,51 @@
           <li>Start with broad questions that split the board roughly in half.</li>
           <li>Keep track of both what you asked and what you learned.</li>
           <li>Use elimination (double-click/cross) to remember excluded characters.</li>
+          <li>You have 3 wrong guesses before you automatically lose!</li>
         </ul>
       </div>
 
       <div class="footer-note">This web version supports 2 players over the network. Use the room system to invite friends.</div>
     </div>
 
-    <!-- RIGHT: visual example + controls -->
+    <!-- RIGHT: rules box -->
     <div class="sidebar">
-      <div class="example-box">
-        <div class="example-title">Example Board</div>
-        <div class="cards-grid" style="margin-bottom:12px;">
-          <div class="mini-card mini-1"><img src="static/img/1.png" alt="">Alice</div>
-          <div class="mini-card mini-2"><img src="static/img/2.png" alt="">Bob</div>
-          <div class="mini-card mini-3"><img src="static/img/3.png" alt="">Charlie</div>
+      <div class="rules-box">
+        <div class="rules-title">Question Rules</div>
+        
+        <div class="rule-item">
+          <strong>Only YES/NO Questions</strong>
+          <p>Questions must be answerable with yes or no. Avoid "what", "which", "where", "who", "why", or "how" questions.</p>
         </div>
-        <div style="font-size:14px; color:#d1d5db;">Double-click a card to cross it out once eliminated.</div>
-      </div>
 
-      <div class="controls">
-        <div id="back-btn" class="button" onclick="location.href='/'">Back to Home</div>
+        <div class="rule-item">
+          <strong>No Obvious Attributes</strong>
+          <p>Don't ask about card colors, positions, or board locations. Focus on character features instead.</p>
+        </div>
+
+        <div class="rule-item">
+          <strong>Must End with "?"</strong>
+          <p>All questions must end with a question mark to be valid.</p>
+        </div>
+
+        <div class="question-examples">
+          <h4 style="color: #10B981">Good Questions:</h4>
+          <div class="example-q good">Does your meme have facial hair?</div>
+          <div class="example-q good">Is your character wearing glasses?</div>
+          <div class="example-q good">Does your meme show a person smiling?</div>
+          <div class="example-q good">Is your character holding something?</div>
+
+          <h4 style="margin-top:12px; color:#fca5a5">Bad Questions:</h4>
+          <div class="example-q bad">Is your card blue? (color)</div>
+          <div class="example-q bad">What is your meme? (not yes/no)</div>
+          <div class="example-q bad">Is it in the top row? (position)</div>
+          <div class="example-q bad">Which character is yours (no "?")</div>
+        </div>
       </div>
     </div>
 
   </div>
 </div>
 
-<script>
-  // small UI interactions (same style as your other pages)
-  document.getElementById('start-btn').addEventListener('click', () => {
-    // same behavior as your main page: show the name modal or go to /room
-    const name = prompt("Enter your name to create a room:");
-    if (name && name.trim()) {
-      window.location.href = `/room?username=${encodeURIComponent(name.trim())}`;
-    }
-  });
-
-  // allow clicking example mini-cards to toggle "crossed" visual (local only)
-  document.querySelectorAll('.mini-card').forEach(card => {
-    card.addEventListener('dblclick', () => {
-      card.style.opacity = card.style.opacity === '0.4' ? '1' : '0.4';
-      card.style.textDecoration = card.style.textDecoration === 'line-through' ? 'none' : 'line-through';
-    });
-  });
-</script>
-
 </body>
 </html>
-
-
-
-
