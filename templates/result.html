@@ -201,6 +201,75 @@
 #cancelLeaveBtn:hover {
   background: #059669;
 }
+
+.chat-box {
+    position: fixed;       /* Fix it on the screen */
+    bottom: 20px;          /* Distance from the bottom */
+    right: 20px;           /* Distance from the right */
+    width: 400px;          /* Set a fixed width */
+    max-height: 400px;     /* Optional: limit height */
+    background: #374151;
+    border-radius: 10px;
+    padding: 1.5vh 1vw;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Optional: nice shadow */
+    z-index: 9999;         /* Keep it on top of other elements */
+}
+
+    
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      font-size: clamp(16px, 1.8vw, 24px);
+      margin-bottom: 1vh;
+      min-height: 0;
+    }
+    
+    .msg { 
+      margin: 0.5vh 0;
+      word-wrap: break-word;
+    }
+    .msg.you { color: #de7d4a; }
+    .msg.opponent { color: #a78bfa; }
+    .msg.error { color: #f87171; font-style: italic; }
+    
+    #messageForm {
+    display: flex;
+    gap: 1vw;
+    align-items: center; /* keeps input and button aligned */
+}
+
+#chatInput {
+    flex: 1;
+    padding: 8px 10px;   /* fixed padding in px for consistent sizing */
+    background: #d9d9d9;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;     /* fixed font size */
+    font-family: 'Bungee Inline', cursive;
+    outline: none;
+    min-width: 0;        /* prevents flex overflow */
+}
+
+#sendBtn {
+    flex-shrink: 0;        /* prevents shrinking */
+    width: 50px;           /* fixed width */
+    height: 50px;          /* fixed height */
+    background: #a78bfa;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+    font-size: 20px;       /* fixed font size */
+    transition: all .2s;
+}
+
+#sendBtn:hover {
+    background: #9370db;
+}
+
+
   </style>
 </head>
 
@@ -243,6 +312,17 @@
     </div>
   </div>
 </div>
+
+<div class="chat-box">
+          <div id="chatMessages">
+          </div>
+          <form id="messageForm">
+            <input type="text" id="chatInput" placeholder="Enter a message...." autocomplete="off"/>
+            <button id="sendBtn" type="submit">➤</button>
+          </form>
+        </div>
+      </div>
+    </div>
 
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
@@ -337,9 +417,43 @@ cancelLeaveBtn.onclick = () => leaveModal.style.display = "none";
 window.onclick = (event) => {
     if (event.target === leaveModal) leaveModal.style.display = "none";
 };
+
+// Chat functionality
+const chatInput = document.getElementById('chatInput');
+
+    socket.on('chat_message', data => {
+      console.log('💬 Received chat_message:', data);
+      const div = document.createElement('div');
+      const isMe = data.username === username;
+      const isSystem = data.username === 'System';
+      
+      if (isSystem) {
+        div.className = 'msg system';
+      } else {
+        div.className = `msg ${isMe ? 'you' : 'opponent'}`;
+      }
+      
+      div.textContent = `${data.username}: ${data.message}`;
+      
+      const chatMessages = document.getElementById('chatMessages');
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    document.getElementById('messageForm').onsubmit = e => {
+      e.preventDefault();
+      if (!chatInput.value.trim()) return;
+      
+      console.log('📤 Sending chat message:', chatInput.value.trim());
+      socket.emit('chat_message', { 
+        room_code: roomCode, 
+        username, 
+        message: chatInput.value.trim() 
+      });
+      chatInput.value = '';
+    };
+
 </script>
 
 </body>
-
 </html>
-
