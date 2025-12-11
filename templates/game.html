@@ -806,9 +806,14 @@
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&surrender=true`;
       }
     }
-    function openInstructions() {
-        window.open('instructions', '_blank'); 
+   function openInstructions() {
+        // Build current game URL with all needed parameters
+        const gameUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${firstTurn}`;
+        
+        // Open instructions page in a new tab, passing gameUrl as return_url
+        window.open(`/instructions?return_url=${encodeURIComponent(gameUrl)}`, '_blank');
     }
+
 
 
 

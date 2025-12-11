@@ -232,9 +232,16 @@
 <body>
 
 <!-- Back button - matching other pages -->
-<div class="back" onclick="location.href='/'">
-  <div>back</div>
-</div>
+<div class="back" id="backBtn">back</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const returnUrl = params.get('return_url') || '/'; // fallback to start page
+
+  document.getElementById('backBtn').onclick = () => {
+    window.location.href = returnUrl;
+  };
+</script>
+
 
 <div class="main-container">
 
