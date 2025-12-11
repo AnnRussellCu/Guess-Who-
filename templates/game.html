@@ -33,6 +33,32 @@
     }
     .back:hover { opacity:0.8; }
 
+    .help {
+      position: absolute;
+      top: 1.5vh;
+      right: 1vw; /* upper-right corner */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(35px, 3.5vw, 50px);
+      height: clamp(35px, 3.5vw, 50px);
+      font-family: 'Bungee Inline';
+      font-size: clamp(18px, 2vw, 28px);
+      color: #fff;
+      background: #60A5FA;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 100;
+      user-select: none;
+      text-align: center;
+    }
+
+    .help:hover {
+      opacity: 0.8;
+    }
+
+
+
     main {
       width: 95vw;
       max-width: 1400px;
@@ -383,6 +409,8 @@
 <body>
 
   <div class="back" onclick="surrenderGame()">Surrender</div>
+  <div class="help" onclick="openInstructions()">?</div>
+
 
   <!-- Custom Modal - Consistent with result.html -->
   <div id="gameModal" class="modal">
@@ -778,6 +806,11 @@
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&surrender=true`;
       }
     }
+    function openInstructions() {
+        window.open('instructions', '_blank'); 
+    }
+
+
 
     // Handle disconnection
     socket.on('player_disconnected', async data => {
