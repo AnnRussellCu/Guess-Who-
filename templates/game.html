@@ -408,60 +408,57 @@
 </head>
 <body>
 
-  <div class="back" onclick="surrenderGame()">Surrender</div>
-  <div class="help" onclick="openInstructions()">?</div>
+<div class="back" onclick="surrenderGame()">Surrender</div>
+<div class="help" onclick="openInstructions()">?</div>
 
+<!-- Custom Modal - Consistent with result.html -->
+<div id="gameModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-text" id="modalTitle">Alert</div>
+    <div class="modal-message" id="modalMessage"></div>
+    <div class="modal-buttons" id="modalButtons">
+      <button class="btn-primary" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+</div>
 
-  <!-- Custom Modal - Consistent with result.html -->
-  <div id="gameModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-text" id="modalTitle">Alert</div>
-      <div class="modal-message" id="modalMessage"></div>
-      <div class="modal-buttons" id="modalButtons">
-        <button class="btn-primary" onclick="closeModal()">OK</button>
+<main>
+  <h1 id="turnIndicator">Loading...</h1>
+
+  <div class="content-wrapper">
+    <div class="left-section">
+      <div class="game-grid" id="gameGrid"></div>
+      <div class="action-buttons">
+        <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
+        <div class="action-btn" id="skipBtn"><button>Skip turn</button></div>
+        <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
+      </div>
+      <div class="hint">Hint: Double-click a card to cross it out • Click once to select</div>
+    </div>
+
+    <div class="right-section">
+      <div class="your-card-area">
+        <div class="your-card-title">YOUR MEME:</div>
+        <div class="your-card-display" id="yourCard">
+          <div class="card-bg" id="yourCardBg"></div>
+          <img id="yourCardImg" src="" alt=""/>
+        </div>
+        <div class="your-card-name" id="yourCardName"></div>
+      </div>
+
+      <div class="chat-box">
+        <div id="chatMessages">
+          <div class="msg system">Game started!</div>
+          <div class="msg system">Remember: Only YES/NO questions allowed!</div>
+        </div>
+        <form id="messageForm">
+          <input type="text" id="chatInput" placeholder="Ask a yes/no question..." autocomplete="off"/>
+          <button id="sendBtn" type="submit">➤</button>
+        </form>
       </div>
     </div>
   </div>
-
-  <main>
-    <h1 id="turnIndicator">Loading...</h1>
-
-    <div class="content-wrapper">
-      <div class="left-section">
-        <div class="game-grid" id="gameGrid"></div>
-        
-        <div class="action-buttons">
-          <div class="action-btn" id="resetBtn"><button>Reset board</button></div>
-          <div class="action-btn" id="skipBtn"><button>Skip turn</button></div>
-          <div class="action-btn" id="guessBtn"><button>it's you!</button></div>
-        </div>
-        
-        <div class="hint">Hint: Double-click a card to cross it out • Click once to select</div>
-      </div>
-
-      <div class="right-section">
-        <div class="your-card-area">
-          <div class="your-card-title">YOUR MEME:</div>
-          <div class="your-card-display" id="yourCard">
-            <div class="card-bg" id="yourCardBg"></div>
-            <img id="yourCardImg" src="" alt=""/>
-          </div>
-          <div class="your-card-name" id="yourCardName"></div>
-        </div>
-
-        <div class="chat-box">
-          <div id="chatMessages">
-            <div class="msg system">Game started!</div>
-            <div class="msg system">Remember: Only YES/NO questions allowed!</div>
-          </div>
-          <form id="messageForm">
-            <input type="text" id="chatInput" placeholder="Ask a yes/no question..." autocomplete="off"/>
-            <button id="sendBtn" type="submit">➤</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </main>
+</main>
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
@@ -615,39 +612,31 @@
     const sendBtn = document.getElementById('sendBtn');
 
     function updateTurnUI(myTurnNow, currentPlayer) {
-      console.log('🔄 ===== UPDATE TURN UI CALLED =====');
-      console.log('📊 Parameters:', { myTurnNow, currentPlayer, username });
-      
-      isMyTurn = myTurnNow;
-      turnInitialized = true;
-      
-      const indicator = document.getElementById('turnIndicator');
-      if (isMyTurn) {
-        indicator.textContent = 'Your turn.';
-      } else {
-        indicator.textContent = `${currentPlayer}'s turn.`;
-      }
-      
-      guessBtn.disabled = !isMyTurn;
-      skipBtn.disabled = !isMyTurn;
-      
-      if (!isMyTurn) {
-        document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
-        selectedCard = null;
-      }
-      
-      console.log('✅ Turn UI updated');
+        isMyTurn = myTurnNow;
+        const indicator = document.getElementById('turnIndicator');
+        indicator.textContent = isMyTurn ? 'Your turn.' : `${currentPlayer}'s turn.`;
+
+        guessBtn.disabled = !isMyTurn;
+        skipBtn.disabled = !isMyTurn;
+
+        if (!isMyTurn) {
+            document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+            selectedCard = null;
+        }
     }
+
 
     if (firstTurn) {
       console.log('🎯 Initializing turn from URL');
-      const initialTurn = firstTurn === username;
+      const initialTurn = firstTurn.toString() === username.toString();
       updateTurnUI(initialTurn, firstTurn);
+      turnInitialized = true; // FIX: mark turn as initialized
     } else {
       console.log('⚠️ No turn parameter in URL');
       guessBtn.disabled = true;
       skipBtn.disabled = true;
     }
+
 
     socket.on('turn_update', data => {
       console.log('📡 Received turn_update:', data);
@@ -659,7 +648,8 @@
         console.log('⚠️ Requesting turn update from server');
         socket.emit('request_turn_update', { room_code: roomCode });
       }
-    }, 2000);
+    }, 500); // smaller timeout for faster update
+
 
     // "It's you!" button
     guessBtn.onclick = async () => {
@@ -673,11 +663,18 @@
       }
       
       console.log('🎯 Making guess:', selectedCard);
+
+      // Disable buttons immediately
+      guessBtn.disabled = true;
+      skipBtn.disabled = true;
+
       socket.emit('make_guess', { room_code: roomCode, username, guessed_id: selectedCard });
       
       document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
       selectedCard = null;
     };
+
+
 
     // Skip turn button
     skipBtn.onclick = async () => {
@@ -691,11 +688,14 @@
         console.log('⏭️ Skipping turn');
         socket.emit('skip_turn', { room_code: roomCode, username });
         
-        // Clear any selection
+        // Clear selection and disable buttons
         document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
         selectedCard = null;
+        guessBtn.disabled = true;
+        skipBtn.disabled = true;
       }
     };
+
 
     // Reset board button
     resetBtn.onclick = () => {
@@ -752,28 +752,23 @@
 
     // Guess result
     socket.on('guess_result', async data => {
-      console.log('🎯 Received guess_result:', data);
-      
-      if (data.success) {
-        await showModal('Victory!', `Correct! ${data.guesser} wins! It was ${data.correct_meme_name}`);
-      } else {
-        if (data.guessed_id) {
-          const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
-          if (wrongCard && !wrongCard.classList.contains('crossed')) {
-            wrongCard.classList.add('crossed');
-            console.log('❌ Auto-crossed wrong guess:', data.guessed_id);
-          }
-        }
-        
-        if (data.guesser === username) {
-          myWrongGuesses++;
-          console.log(`❌ Wrong guesses: ${myWrongGuesses}/3`);
-          await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
+        if (data.success) {
+            await showModal('Victory!', `Correct! ${data.guesser} wins! It was ${data.correct_meme_name}`);
         } else {
-          await showModal('Wrong Guess', `Wrong guess by ${data.guesser}!`);
+            if (data.guessed_id) {
+                const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
+                if (wrongCard && !wrongCard.classList.contains('crossed')) wrongCard.classList.add('crossed');
+            }
+
+            if (data.guesser === username) {
+                myWrongGuesses++;
+                await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
+            } else {
+                await showModal('Wrong Guess', `Wrong guess by ${data.guesser}!`);
+            }
         }
-      }
     });
+
 
     // Game over
     socket.on('game_over', async data => {
@@ -807,15 +802,9 @@
       }
     }
    function openInstructions() {
-        // Build current game URL with all needed parameters
-        const gameUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${firstTurn}`;
-        
-        // Open instructions page in a new tab, passing gameUrl as return_url
-        window.open(`/instructions?return_url=${encodeURIComponent(gameUrl)}`, '_blank');
+        const returnUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${encodeURIComponent(username)}`;
+        window.location.href = `/instructions?return_url=${encodeURIComponent(returnUrl)}`;
     }
-
-
-
 
     // Handle disconnection
     socket.on('player_disconnected', async data => {
