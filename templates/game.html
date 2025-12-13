@@ -400,6 +400,48 @@
     .modal-buttons .btn-info:hover {
       background: #3B82F6;
     }
+
+    /* Instructions Modal - full screen */
+    #instructionsModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(30, 30, 47, 0.95);
+      z-index: 2000;
+      overflow-y: auto;
+    }
+
+    #instructionsModal.active {
+      display: block;
+    }
+
+    #instructionsModal iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .close-instructions {
+      position: fixed;
+      top: 26px;
+      left: 14px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      cursor: pointer;
+      font-family: 'Bungee Inline';
+      font-size: 32px;
+      color: #fff;
+      z-index: 2001;
+      transition: opacity 0.2s;
+    }
+
+    .close-instructions:hover {
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
@@ -415,6 +457,11 @@
       <button class="btn-primary" onclick="closeModal()">OK</button>
     </div>
   </div>
+</div>
+
+<div id="instructionsModal">
+  <div class="close-instructions" onclick="closeInstructions()">back</div>
+  <iframe id="instructionsFrame" src=""></iframe>
 </div>
 
 <main>
@@ -468,6 +515,34 @@
     let opponentUsername = null;
     let turnInitialized = false;
     let myWrongGuesses = 0;
+    let crossedCards = new Set(); // Track crossed cards
+
+    // Load saved state on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedState = sessionStorage.getItem(`gameState_${roomCode}`);
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        crossedCards = new Set(state.crossedCards || []);
+        myWrongGuesses = state.wrongGuesses || 0;
+        
+        // Restore crossed cards after grid is created
+        setTimeout(() => {
+          crossedCards.forEach(cardId => {
+            const card = document.querySelector(`.game-card[data-id="${cardId}"]`);
+            if (card) card.classList.add('crossed');
+          });
+        }, 100);
+      }
+    });
+
+    // Save state before leaving
+    function saveGameState() {
+      const state = {
+        crossedCards: Array.from(crossedCards),
+        wrongGuesses: myWrongGuesses
+      };
+      sessionStorage.setItem(`gameState_${roomCode}`, JSON.stringify(state));
+    }
 
     if (!roomCode || !username || !myChoiceId) {
       showModal('Error', 'Missing game data. Returning to menu...');
@@ -540,6 +615,20 @@
       if (event.target === modal) closeModal();
     };
 
+    function openInstructions() {
+      saveGameState();
+      const modal = document.getElementById('instructionsModal');
+      const iframe = document.getElementById('instructionsFrame');
+      iframe.src = '/instructions';
+      modal.classList.add('active');
+    }
+
+    function closeInstructions() {
+      const modal = document.getElementById('instructionsModal');
+      modal.classList.remove('active');
+      document.getElementById('instructionsFrame').src = '';
+    }
+
     const myMeme = memes.find(m => m.id === myChoiceId);
     if (myMeme) {
       document.getElementById('yourCardImg').src = myMeme.img;
@@ -561,6 +650,16 @@
       card.ondblclick = (e) => {
         e.stopPropagation();
         card.classList.toggle('crossed');
+        
+        // Update tracked crossed cards
+        const cardId = parseInt(card.dataset.id);
+        if (card.classList.contains('crossed')) {
+          crossedCards.add(cardId);
+        } else {
+          crossedCards.delete(cardId);
+        }
+        saveGameState();
+        
         if (card.classList.contains('selected')) {
           card.classList.remove('selected');
           selectedCard = null;
@@ -660,6 +759,8 @@
 
     resetBtn.onclick = () => {
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
+      crossedCards.clear();
+      saveGameState();
     };
 
     socket.on('question_rejected', data => {
@@ -697,17 +798,17 @@
       chatInput.value = '';
     };
 
-    // FIXED guess_result handler
     socket.on('guess_result', async data => {
         if (data.success) {
             const winner = data.guesser === username ? "You" : "Opponent";
             await showModal('Victory!', `Correct! ${winner} wins! It was ${data.correct_meme_name}`);
         } else {
-            // Only cross out and show wrong guess count if I am the guesser
             if (data.guesser === username && data.guessed_id) {
                 const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
                 if (wrongCard && !wrongCard.classList.contains('crossed')) {
                     wrongCard.classList.add('crossed');
+                    crossedCards.add(data.guessed_id);
+                    saveGameState();
                 }
                 myWrongGuesses++;
                 await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
@@ -735,6 +836,9 @@
       
       await showModal('Game Over', message);
 
+      // Clear saved state
+      sessionStorage.removeItem(`gameState_${roomCode}`);
+
       setTimeout(() => {
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
       }, 1000);
@@ -744,17 +848,14 @@
       const confirmed = await showModal('Surrender?', 'Give up and lose the game?', true);
       if (confirmed) {
         socket.emit('surrender', { room_code: roomCode, username });
+        sessionStorage.removeItem(`gameState_${roomCode}`);
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=Opponent&surrender=true`;
       }
     }
 
-    function openInstructions() {
-      const returnUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${encodeURIComponent(username)}`;
-      window.location.href = `/instructions?return_url=${encodeURIComponent(returnUrl)}`;
-    }
-
     socket.on('player_disconnected', async data => {
       await showModal('Player Disconnected', `${data.username} disconnected. Game over.`);
+      sessionStorage.removeItem(`gameState_${roomCode}`);
       location.href = '/';
     });
   </script>
