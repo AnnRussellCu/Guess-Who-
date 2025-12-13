@@ -426,7 +426,7 @@
 
     .close-instructions {
       position: fixed;
-      top: 26px;
+      top: 27px;
       left: 14px;
       display: flex;
       gap: 7px;
@@ -504,18 +504,36 @@
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
-    const socket = io();
+    // Force new connection for each client
+    const socket = io({
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      forceNew: true
+    });
+    
+    socket.on('connect', () => {
+      console.log(`[SOCKET] Connected with ID: ${socket.id}`);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log(`[SOCKET] Disconnected`);
+    });
+    
     const params = new URLSearchParams(location.search);
     const roomCode = params.get('room');
     const username = params.get('username');
     const myChoiceId = parseInt(params.get('choice'));
     const firstTurn = params.get('turn');
+    
+    console.log(`[GAME] Initializing - Room: ${roomCode}, Username: ${username}, Choice: ${myChoiceId}, FirstTurn: ${firstTurn}`);
     let selectedCard = null;
     let isMyTurn = false;
     let opponentUsername = null;
     let turnInitialized = false;
     let myWrongGuesses = 0;
     let crossedCards = new Set(); // Track crossed cards
+    let roomPlayers = []; // Store all players in room
 
     // Load saved state on page load
     window.addEventListener('DOMContentLoaded', () => {
@@ -545,11 +563,21 @@
     }
 
     if (!roomCode || !username || !myChoiceId) {
+      console.error('[GAME] Missing required parameters!', {roomCode, username, myChoiceId});
       showModal('Error', 'Missing game data. Returning to menu...');
       setTimeout(() => location.href = '/', 2000);
+    } else {
+      console.log('[GAME] All parameters valid, continuing...');
     }
 
     socket.emit('join_game_room', { room_code: roomCode, username });
+
+    // Listen for player list updates
+    socket.on('update_players', players => {
+      roomPlayers = players;
+      opponentUsername = players.find(p => p !== username);
+      console.log(`[GAME] Players in room: ${players}, Opponent: ${opponentUsername}`);
+    });
 
     const memes = [
       {id:1, name:"Doubter", img:"/static/img/1.png", color:"yellow"},
@@ -695,6 +723,8 @@
         isMyTurn = myTurnNow;
         const indicator = document.getElementById('turnIndicator');
         indicator.textContent = isMyTurn ? 'Your turn.' : "Opponent's turn.";
+        
+        console.log(`[TURN] Turn updated - isMyTurn: ${isMyTurn}, Username: ${username}`);
 
         guessBtn.disabled = !isMyTurn;
         skipBtn.disabled = !isMyTurn;
@@ -707,17 +737,20 @@
 
     if (firstTurn) {
       const myTurnNow = firstTurn === username;
+      console.log(`[TURN] Initial turn setup - firstTurn: ${firstTurn}, myTurnNow: ${myTurnNow}`);
       updateTurnUI(myTurnNow);
       turnInitialized = true;
     }
 
     socket.on('turn_update', data => {
+      console.log(`[TURN] Received turn_update - current_turn: ${data.current_turn}, my username: ${username}`);
       const myTurnNow = data.current_turn === username;
       updateTurnUI(myTurnNow);
     });
 
     setTimeout(() => {
       if (!turnInitialized) {
+        console.log(`[TURN] Turn not initialized, requesting update from server`);
         socket.emit('request_turn_update', { room_code: roomCode });
       }
     }, 500);
@@ -839,6 +872,7 @@
       // Clear saved state
       sessionStorage.removeItem(`gameState_${roomCode}`);
 
+      // Both players go to result page with winner info
       setTimeout(() => {
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
       }, 1000);
@@ -847,16 +881,23 @@
     async function surrenderGame() {
       const confirmed = await showModal('Surrender?', 'Give up and lose the game?', true);
       if (confirmed) {
+        // Get opponent's actual username
+        const opponent = opponentUsername || 'Opponent';
+        
         socket.emit('surrender', { room_code: roomCode, username });
         sessionStorage.removeItem(`gameState_${roomCode}`);
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=Opponent&surrender=true`;
+        
+        // Navigate to result page as loser
+        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(opponent)}`;
       }
     }
 
     socket.on('player_disconnected', async data => {
-      await showModal('Player Disconnected', `${data.username} disconnected. Game over.`);
+      await showModal('Player Disconnected', `${data.username} disconnected. You win by default!`);
       sessionStorage.removeItem(`gameState_${roomCode}`);
-      location.href = '/';
+      
+      // Navigate to result page as winner
+      location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(username)}`;
     });
   </script>
 </body>

@@ -93,9 +93,8 @@
       opacity: 0.6;
     }
 
-    .leave-btn:hover { background: #EF4444; }
-    .playagain-btn:hover { background: #316ac7; }
-    .playagain-btn.clicked { background: #4B5563 !important; cursor: not-allowed; }
+    .leave-btn:hover:not(.disabled) { background: #EF4444; }
+    .playagain-btn:hover:not(.disabled) { background: #316ac7; }
 
     .modal {
       display: none;
@@ -194,7 +193,7 @@
     <div class="rectangle"></div>
     <div class="left-area">
       <div class="you-won" id="resultText">YOU WON!</div>
-      <img src="{{ url_for('static', filename='img/goldmedal.png')}}" class="medal-img">
+      <img src="{{ url_for('static', filename='img/goldmedal.png')}}" class="medal-img" id="medalImg">
     </div>
   </div>
 
@@ -220,24 +219,29 @@
   </form>
 </div>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
 const socket = io();
 const playBtn = document.getElementById("playagainMainBtn");
 const leaveBtn = document.getElementById("leaveMainBtn");
-const roomCode = "{{ room_code }}";
-const username = "{{ username }}";
+const params = new URLSearchParams(window.location.search);
+
+// Get room code and username from URL params (primary) or Flask template (fallback)
+const roomCode = params.get('room') || "{{ room_code }}";
+const username = params.get('username') || "{{ username }}";
+
+console.log(`[RESULT] Room: ${roomCode}, Username: ${username}`);
 
 const statusText = document.getElementById("resultText");
-const medalImg = document.querySelector(".medal-img");
+const medalImg = document.getElementById("medalImg");
 
 const winMedal = "{{ url_for('static', filename='img/goldmedal.png') }}";
 const loseMedal = "{{ url_for('static', filename='img/silvermedal.png') }}";
 
-const params = new URLSearchParams(window.location.search);
 const winner = params.get("winner");
 const isWinner = username === winner;
 
+// Set win/loss display
 if (isWinner) {
   statusText.textContent = "YOU WON!";
   statusText.style.color = "#ffea00";
@@ -254,36 +258,73 @@ let hasClicked = false;
 let playersReady = 0;
 const totalPlayers = 2;
 
+console.log(`[RESULT] Loaded result page for ${username} in room ${roomCode}`);
+
+// Join the result room
+socket.emit('join_result_room', { room_code: roomCode, username });
+console.log(`[RESULT] Emitted join_result_room`);
+
+// Request current ready count after joining
+setTimeout(() => {
+  console.log(`[RESULT] Requesting ready count update`);
+}, 500);
+
+// Listen for ready count updates
 socket.on('update_ready_count', (data) => {
+  console.log(`[RESULT] Received ready count update:`, data);
   playersReady = data.ready_players;
-  playBtn.innerText = hasClicked && playersReady < totalPlayers
-    ? `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`
-    : `PLAY AGAIN ${playersReady}/${totalPlayers}`;
+  
+  if (hasClicked) {
+    playBtn.innerText = `PLAY AGAIN (${playersReady}/${totalPlayers}) waiting...`;
+    playBtn.classList.add('disabled');
+  } else {
+    playBtn.innerText = `PLAY AGAIN (${playersReady}/${totalPlayers})`;
+    playBtn.classList.remove('disabled');
+  }
 });
 
+// Handle play again click
 playBtn.onclick = () => {
-  if (hasClicked) return;
+  if (hasClicked) {
+    console.log(`[RESULT] Already clicked, ignoring`);
+    return;
+  }
+  
+  console.log(`[RESULT] Play again clicked by ${username}`);
   hasClicked = true;
+  playBtn.classList.add('disabled');
+  playBtn.innerText = `PLAY AGAIN (${playersReady + 1}/${totalPlayers}) waiting...`;
+  
   socket.emit('player_ready', { room_code: roomCode, username });
-  playBtn.classList.add('clicked');
-  playBtn.style.opacity = "0.7";
-  playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
+  console.log(`[RESULT] Emitted player_ready`);
 };
 
+// Listen for redirect to new game
 socket.on('redirect_to_game', (data) => {
-  window.location.href = `/choose.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
+  console.log(`[RESULT] Received redirect_to_game`, data);
+  window.location.href = `/choose.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
 });
 
+// Leave room functionality
 const leaveModal = document.getElementById("leaveModal");
 leaveBtn.onclick = () => leaveModal.style.display = "flex";
+
 document.getElementById("confirmLeaveBtn").onclick = () => {
   socket.emit('leave_game', { room_code: roomCode, username });
   window.location.href = "/";
 };
-document.getElementById("cancelLeaveBtn").onclick = () => leaveModal.style.display = "none";
-window.onclick = (e) => { if (e.target === leaveModal) leaveModal.style.display = "none"; };
 
+document.getElementById("cancelLeaveBtn").onclick = () => {
+  leaveModal.style.display = "none";
+};
+
+window.onclick = (e) => {
+  if (e.target === leaveModal) leaveModal.style.display = "none";
+};
+
+// Chat functionality
 const chatInput = document.getElementById('chatInput');
+
 socket.on('chat_message', data => {
   const div = document.createElement('div');
   const isMe = data.username === username;
@@ -299,6 +340,12 @@ document.getElementById('messageForm').onsubmit = e => {
   socket.emit('chat_message', { room_code: roomCode, username, message: chatInput.value.trim() });
   chatInput.value = '';
 };
+
+// Handle player disconnect
+socket.on('player_disconnected', data => {
+  alert(`${data.username} left the room. Returning to menu...`);
+  window.location.href = '/';
+});
 </script>
 
 </body>
