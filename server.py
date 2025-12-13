@@ -31,6 +31,9 @@ player_sids = {}
 # { room_code: { username: wrong_guess_count } } to track wrong guesses
 wrong_guesses = {}
 
+sid_to_username = {}
+
+
 
 # ---------------------
 # QUESTION FILTERING
@@ -196,6 +199,7 @@ def handle_join_game_room(data):
     room_code = data['room_code']
     username = data['username']
 
+    sid_to_username[request.sid] = username
     print(f"[JOIN] {username} joining game room {room_code}")
     join_room(room_code)
     
@@ -354,7 +358,9 @@ def finish_choose_phase(room_code):
 
     # Assign random selection for players who did NOT choose
     for player_name in players:
-        if player_name not in chosen_usernames:
+        # Check if this player already has a choice assigned
+        already_chose = any(info.get('username') == player_name for info in player_choices[room_code].values())
+        if not already_chose:
             random_choice = random.randint(1, 15)
             # Find this player's SID
             player_sid = player_sids.get(player_name)
@@ -390,18 +396,21 @@ def finish_choose_phase(room_code):
     # Redirect both players to game.html with their choice AND first_turn
     print(f"[FINISH] Redirecting players to game.html...")
 
+    # Safe redirect: use stored SID from player_sids to avoid username swap
+ 
     for sid, info in player_choices[room_code].items():
-        if isinstance(info, dict) and 'username' in info:
-            redirect_data = {
-                'room_code': room_code,
-                'username': info['username'],
-                'choice': info['choice'],
-                'first_turn': first_turn_player
-            }
-            socketio.emit('redirect_to_gameplay', redirect_data, to=sid)
-            print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']} with first_turn={first_turn_player}")
-        else:
-            print(f"[FINISH] → Skipping invalid entry: {sid}: {info}")
+            if isinstance(info, dict) and 'username' in info:
+                redirect_data = {
+                    'room_code': room_code,
+                    'username': info['username'],
+                    'choice': info['choice'],
+                    'first_turn': first_turn_player
+                }
+                socketio.emit('redirect_to_gameplay', redirect_data, to=sid)
+                print(f"[FINISH] → Sent redirect to SID {sid} for player {info['username']} with first_turn={first_turn_player}")
+            else:
+                print(f"[FINISH] → Skipping invalid entry: {sid}: {info}")
+
 
     # Send turn update
     print(f"[FINISH] Emitting turn_update...")

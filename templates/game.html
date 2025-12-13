@@ -621,7 +621,7 @@
     function updateTurnUI(myTurnNow, currentPlayer) {
         isMyTurn = myTurnNow;
         const indicator = document.getElementById('turnIndicator');
-        indicator.textContent = isMyTurn ? 'Your turn.' : `${currentPlayer}'s turn.`;
+        indicator.textContent = isMyTurn ? 'Your turn.' : "Opponent's turn.";
 
         guessBtn.disabled = !isMyTurn;
         skipBtn.disabled = !isMyTurn;
@@ -633,11 +633,19 @@
     }
 
 
-    if (firstTurn) {
-      console.log('🎯 Initializing turn from URL');
-      const initialTurn = firstTurn.toString() === username.toString();
-      updateTurnUI(initialTurn, firstTurn);
-      turnInitialized = true; // FIX: mark turn as initialized
+
+    if (!turnInitialized && firstTurn) {
+      // Wait until we know the opponent's username
+      socket.on('room_users', data => {
+        // data.users is an array of usernames in the room
+        opponentUsername = data.users.find(u => u !== username);
+        console.log('👥 Opponent username set to:', opponentUsername);
+
+        const myTurnNow = firstTurn === username;
+        const currentPlayerName = myTurnNow ? username : opponentUsername;
+        updateTurnUI(myTurnNow, currentPlayerName);
+        turnInitialized = true;
+      });
     } else {
       console.log('⚠️ No turn parameter in URL');
       guessBtn.disabled = true;
@@ -645,10 +653,17 @@
     }
 
 
+
+
     socket.on('turn_update', data => {
       console.log('📡 Received turn_update:', data);
-      updateTurnUI(data.current_turn === username, data.current_turn);
+
+      const myTurnNow = data.current_turn === username;
+      const currentPlayerName = myTurnNow ? username : opponentUsername || 'Opponent';
+
+      updateTurnUI(myTurnNow, currentPlayerName);
     });
+
 
     setTimeout(() => {
       if (!turnInitialized) {
@@ -724,25 +739,27 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    // Chat functionality
-    socket.on('chat_message', data => {
-      console.log('💬 Received chat_message:', data);
-      const div = document.createElement('div');
-      const isMe = data.username === username;
-      const isSystem = data.username === 'System';
-      
-      if (isSystem) {
-        div.className = 'msg system';
-      } else {
-        div.className = `msg ${isMe ? 'you' : 'opponent'}`;
-      }
-      
-      div.textContent = `${data.username}: ${data.message}`;
-      
-      const chatMessages = document.getElementById('chatMessages');
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
+          // Always display the correct name
+        socket.on('chat_message', data => {
+            const div = document.createElement('div');
+
+            if (data.username === 'System') {
+                div.className = 'msg system';
+                div.textContent = `💬 ${data.message}`;
+            } else {
+                const isMe = data.username === username;
+                div.className = `msg ${isMe ? 'you' : 'opponent'}`;
+
+                // Hide real usernames, show "You" / "Opponent"
+                const sender = isMe ? "You" : "Opponent";
+                div.textContent = `${sender}: ${data.message}`;
+            }
+
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
 
     document.getElementById('messageForm').onsubmit = e => {
       e.preventDefault();
@@ -760,7 +777,8 @@
     // Guess result
     socket.on('guess_result', async data => {
         if (data.success) {
-            await showModal('Victory!', `Correct! ${data.guesser} wins! It was ${data.correct_meme_name}`);
+            const winner = data.guesser === username ? "You" : "Opponent";
+            await showModal('Victory!', `Correct! ${winner} wins! It was ${data.correct_meme_name}`);
         } else {
             if (data.guessed_id) {
                 const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
@@ -771,10 +789,11 @@
                 myWrongGuesses++;
                 await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
             } else {
-                await showModal('Wrong Guess', `Wrong guess by ${data.guesser}!`);
+                await showModal('Wrong Guess', `Wrong guess by Opponent!`);
             }
         }
     });
+
 
 
     // Game over
@@ -782,23 +801,30 @@
       console.log('🏁 Game over:', data);
       
       let message = '';
+      const winnerIsMe = data.winner === username; // Boolean
+      const winnerName = winnerIsMe ? "You" : "Opponent";
+      const verb = winnerIsMe ? "win" : "wins";
+
       if (data.reason === 'surrender') {
-        message = `${data.winner} wins! Opponent surrendered.`;
+        message = `${winnerName} ${verb}! Opponent surrendered.`;
       } else if (data.reason === 'too_many_wrong_guesses') {
-        message = `${data.winner} wins! ${data.loser} made 3 wrong guesses.`;
+        message = `${winnerName} ${verb}! Opponent made 3 wrong guesses.`;
       } else if (data.correct_meme_name) {
-        message = `${data.winner} wins! It was ${data.correct_meme_name}`;
+        message = `${winnerName} ${verb}! It was ${data.correct_meme_name}`;
       } else {
-        message = `${data.winner} wins!`;
+        message = `${winnerName} ${verb}!`;
       }
       
       await showModal('Game Over', message);
-      
+
+      // PASS THE ACTUAL WINNER USERNAME, NOT "You"/"Opponent"
       setTimeout(() => {
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
       }, 1000);
-
     });
+
+
+
 
     // Surrender function
     async function surrenderGame() {
@@ -806,9 +832,10 @@
       if (confirmed) {
         console.log('🏳️ Surrendering game...');
         socket.emit('surrender', { room_code: roomCode, username });
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&surrender=true`;
+        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=Opponent&surrender=true`;
       }
     }
+
    function openInstructions() {
         const returnUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${encodeURIComponent(username)}`;
         window.location.href = `/instructions?return_url=${encodeURIComponent(returnUrl)}`;

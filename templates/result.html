@@ -6,8 +6,9 @@
   <title>Result Room</title>
   <link href="https://fonts.googleapis.com/css2?family=Dokdo&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="globals.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='globals.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
   <style>
     html, body {
       margin: 0;
@@ -282,8 +283,6 @@
 
    <div class="left-area">
         <div class="you-won" id="resultText">YOU WON!</div>
-        <div class="player-user">{{ username }}</div>
-
         <img src="{{ url_for('static', filename='img/goldmedal.png')}}"
              class="medal-img">
     </div>
@@ -335,12 +334,13 @@ const username = "{{ username }}";
 
 // Elements
 const statusText = document.querySelector(".you-won");
-const playerNameText = document.querySelector(".player-user");
 const medalImg = document.querySelector(".medal-img");
 
+
 // Default medal images
-const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}";
-const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}";
+const winMedal = "{{ url_for('static', filename='img/goldmedal.png') }}";
+const loseMedal = "{{ url_for('static', filename='img/silvermedal.png') }}";
+
 
 const params = new URLSearchParams(window.location.search);
 const winner = params.get("winner");
@@ -360,7 +360,6 @@ if (isWinner) {
     medalImg.src = loseMedal;
 }
 
-playerNameText.textContent = username;
 
 
 // -------------------
