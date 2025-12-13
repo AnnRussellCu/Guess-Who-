@@ -18,290 +18,190 @@
       background: #1E1E2F;
       color: #fff;
     }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     .leave-join-room {
-      width: 1440px;
-      height: 1024px;
-      background: #1E1E2F;
+      width: min(100vw, 1440px);
+      height: min(100vh, 1024px);
       position: relative;
+      flex-shrink: 0;
     }
 
     .box {
       position: absolute;
-      top: calc(50% - 350px);
+      top: calc(50% - 275px);
       left: calc(50% - 598px);
       width: 833px;
       height: 554px;
     }
+
     .box .rectangle {
       position: absolute;
-      width: 831px;
-      height: 554px;
+      inset: 0;
       background: #d9d9d91a;
       border: 3px dashed #9ca3af;
       border-radius: 20px;
     }
+
     .left-area {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-   }
-
-
-    .default-text {
       position: absolute;
-      top: calc(50% - 60px);
-      left: calc(50% - 302px);
-      width: 601px;
-      font-family: 'Dokdo', cursive;
-      font-size: 48px;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      color: #fff;
-    }
-     .you-won {
-        font-family:'Bungee Inline', cursive;
-        font-size:90px;
-        color:#ffea00;
-        text-shadow:0 0 20px #ffea00;
-        margin-bottom:10px;
-        margin-top: 25px;
     }
 
-    .player-user {
-        font-size:40px;
-        opacity:0.9;
-        margin-bottom:25px;
+    .you-won {
+      font-family: 'Bungee Inline', cursive;
+      font-size: clamp(50px, 6.25vw, 90px);
+      text-shadow: 0 0 20px currentColor;
+      margin: 25px 0 10px;
     }
+
     .medal-img {
-        width:260px;
-        margin-top:30px;
+      width: clamp(150px, 18vw, 260px);
+      margin-top: 30px;
     }
 
     .leave-btn, .playagain-btn {
       position: absolute;
-      width: 275px;
-      height: 55px;
+      width: clamp(190px, 19.1vw, 275px);
+      height: clamp(38px, 5.37vh, 55px);
       border-radius: 10px;
       text-align: center;
-      line-height: 55px;
+      line-height: clamp(38px, 5.37vh, 55px);
       font-family: 'Bungee Inline', cursive;
-      font-size: 32px;
+      font-size: clamp(22px, 2.22vw, 32px);
       color: #fff;
       cursor: pointer;
       transition: all 0.3s;
     }
-    .leave-btn { top: 325px; left: 1031px; background: #10B981; }
-    .playagain-btn   { top: 510px; left: 1031px; background: #60A5FA; }
+
+    .leave-btn    { top: 325px; left: 1031px; background: #10B981; }
+    .playagain-btn { top: 510px; left: 1031px; background: #60A5FA; }
+
     .leave-btn.disabled, .playagain-btn.disabled {
       background: #4B5563 !important;
       cursor: not-allowed;
       opacity: 0.6;
     }
 
-    .box-content { display: none; position: absolute; inset: 0; }
-    .box-content.active { display: block; }
+    .leave-btn:hover { background: #EF4444; }
+    .playagain-btn:hover { background: #316ac7; }
+    .playagain-btn.clicked { background: #4B5563 !important; cursor: not-allowed; }
 
-    
-    #create-state .start-btn {
-      position: absolute;
-      top: 460px;
-      left: 278px;
-      width: 275px;
-      height: 55px;
-      background: #10B981;
-      border-radius: 10px;
-      text-align: center;
-      line-height: 55px;
-      font-family: 'Bungee Inline', cursive;
-      font-size: 32px;
-      color: #fff;
-      cursor: pointer;
+    .modal {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 30, 47, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
     }
-    .leave-btn:hover {
-    background: #EF4444; /* red on hover */
-}
-.playagain-btn:hover {
-    background: #316ac7; /* lighter blue on hover */
-}
 
+    .modal-content {
+      background: #1E1E2F;
+      padding: clamp(30px, 4vw, 40px);
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 0 20px #000;
+      max-width: 90%;
+    }
 
-.playagain-btn.clicked {
-    background: #4B5563 !important; /* grey when clicked */
-    cursor: not-allowed;
-}
+    .modal-text {
+      font-family: 'Bungee Inline', cursive;
+      font-size: clamp(28px, 4vw, 36px);
+      margin-bottom: 30px;
+    }
 
-/* Modal overlay */
-.modal {
-  display: none; /* hidden by default */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(30, 30, 47, 0.8);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-}
+    .modal-buttons button {
+      font-family: 'Bungee Inline', cursive;
+      font-size: clamp(22px, 2.8vw, 28px);
+      padding: 10px 30px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #fff;
+    }
 
-/* Modal box */
-.modal-content {
-  background: #1E1E2F;
-  padding: 40px;
-  border-radius: 20px;
-  text-align: center;
-  color: #fff;
-  box-shadow: 0 0 20px #000;
-}
+    #confirmLeaveBtn { background: #EF4444; }
+    #confirmLeaveBtn:hover { background: #DC2626; }
+    #cancelLeaveBtn { background: #10B981; }
+    #cancelLeaveBtn:hover { background: #059669; }
 
-/* Modal text */
-.modal-text {
-  font-family: 'Bungee Inline', cursive;
-  font-size: 36px;
-  margin-bottom: 30px;
-}
+    .chat-box {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: clamp(300px, 30vw, 400px);
+      max-height: 400px;
+      background: #374151;
+      border-radius: 10px;
+      padding: 1.5vh 1vw;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 9999;
+    }
 
-/* Modal buttons */
-.modal-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-.modal-buttons button {
-  font-family: 'Bungee Inline', cursive;
-  font-size: 28px;
-  padding: 10px 30px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: 0.3s;
-  color: #fff;
-}
-
-#confirmLeaveBtn {
-  background: #EF4444;
-}
-
-#confirmLeaveBtn:hover {
-  background: #DC2626;
-}
-
-#cancelLeaveBtn {
-  background: #10B981;
-}
-
-#cancelLeaveBtn:hover {
-  background: #059669;
-}
-
-.chat-box {
-    position: fixed;       /* Fix it on the screen */
-    bottom: 20px;          /* Distance from the bottom */
-    right: 20px;           /* Distance from the right */
-    width: 400px;          /* Set a fixed width */
-    max-height: 400px;     /* Optional: limit height */
-    background: #374151;
-    border-radius: 10px;
-    padding: 1.5vh 1vw;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Optional: nice shadow */
-    z-index: 9999;         /* Keep it on top of other elements */
-}
-
-    
     #chatMessages {
       flex: 1;
       overflow-y: auto;
       font-size: clamp(16px, 1.8vw, 24px);
       margin-bottom: 1vh;
-      min-height: 0;
     }
-    
-    .msg { 
-      margin: 0.5vh 0;
-      word-wrap: break-word;
-    }
+
+    .msg { margin: 0.5vh 0; word-wrap: break-word; }
     .msg.you { color: #de7d4a; }
     .msg.opponent { color: #a78bfa; }
-    .msg.error { color: #f87171; font-style: italic; }
-    
-    #messageForm {
-    display: flex;
-    gap: 1vw;
-    align-items: center; /* keeps input and button aligned */
-}
 
-#chatInput {
-    flex: 1;
-    padding: 8px 10px;   /* fixed padding in px for consistent sizing */
-    background: #d9d9d9;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;     /* fixed font size */
-    font-family: 'Bungee Inline', cursive;
-    outline: none;
-    min-width: 0;        /* prevents flex overflow */
-}
-
-#sendBtn {
-    flex-shrink: 0;        /* prevents shrinking */
-    width: 50px;           /* fixed width */
-    height: 50px;          /* fixed height */
-    background: #a78bfa;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    color: white;
-    font-size: 20px;       /* fixed font size */
-    transition: all .2s;
-}
-
-#sendBtn:hover {
-    background: #9370db;
-}
-
-
+    #messageForm { display: flex; gap: 1vw; align-items: center; }
+    #chatInput {
+      flex: 1;
+      padding: 8px 10px;
+      background: #d9d9d9;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: 'Bungee Inline', cursive;
+      outline: none;
+    }
+    #sendBtn {
+      width: 50px;
+      height: 50px;
+      background: #a78bfa;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      font-size: 20px;
+    }
+    #sendBtn:hover { background: #9370db; }
   </style>
 </head>
-
 <body>
 
 <div class="leave-join-room">
-
   <div class="box">
     <div class="rectangle"></div>
-
-   <div class="left-area">
-        <div class="you-won" id="resultText">YOU WON!</div>
-        <img src="{{ url_for('static', filename='img/goldmedal.png')}}"
-             class="medal-img">
-    </div>
-
-    
-
-    <div id="playagain-state" class="box-content">
- 
-      <div class="status" id="playagainStatus"></div>
+    <div class="left-area">
+      <div class="you-won" id="resultText">YOU WON!</div>
+      <img src="{{ url_for('static', filename='img/goldmedal.png')}}" class="medal-img">
     </div>
   </div>
 
-
   <div class="leave-btn" id="leaveMainBtn">Leave room</div>
   <div class="playagain-btn" id="playagainMainBtn">Play again (0/2)</div>
-
 </div>
 
-<!-- Leave Confirmation Modal -->
 <div id="leaveModal" class="modal">
   <div class="modal-content">
     <div class="modal-text">Are you sure you want to leave the game?</div>
@@ -313,145 +213,92 @@
 </div>
 
 <div class="chat-box">
-          <div id="chatMessages">
-          </div>
-          <form id="messageForm">
-            <input type="text" id="chatInput" placeholder="Enter a message...." autocomplete="off"/>
-            <button id="sendBtn" type="submit">➤</button>
-          </form>
-        </div>
-      </div>
-    </div>
-
+  <div id="chatMessages"></div>
+  <form id="messageForm">
+    <input type="text" id="chatInput" placeholder="Enter a message...." autocomplete="off"/>
+    <button id="sendBtn" type="submit">➤</button>
+  </form>
+</div>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 const socket = io();
-const playBtn = document.getElementById("playagainMainBtn"); // Play Again button
+const playBtn = document.getElementById("playagainMainBtn");
 const leaveBtn = document.getElementById("leaveMainBtn");
 const roomCode = "{{ room_code }}";
 const username = "{{ username }}";
 
-// Elements
-const statusText = document.querySelector(".you-won");
+const statusText = document.getElementById("resultText");
 const medalImg = document.querySelector(".medal-img");
 
-
-// Default medal images
 const winMedal = "{{ url_for('static', filename='img/goldmedal.png') }}";
 const loseMedal = "{{ url_for('static', filename='img/silvermedal.png') }}";
 
-
 const params = new URLSearchParams(window.location.search);
 const winner = params.get("winner");
-
 const isWinner = username === winner;
 
-// Set result immediately
 if (isWinner) {
-    statusText.textContent = "YOU WON!";
-    statusText.style.color = "#ffea00";
-    statusText.style.textShadow = "0 0 20px #ffea00";
-    medalImg.src = winMedal;
+  statusText.textContent = "YOU WON!";
+  statusText.style.color = "#ffea00";
+  statusText.style.textShadow = "0 0 20px #ffea00";
+  medalImg.src = winMedal;
 } else {
-    statusText.textContent = "YOU LOST!";
-    statusText.style.color = "#3b82f6";
-    statusText.style.textShadow = "0 0 20px #3b82f6";
-    medalImg.src = loseMedal;
+  statusText.textContent = "YOU LOST!";
+  statusText.style.color = "#3b82f6";
+  statusText.style.textShadow = "0 0 20px #3b82f6";
+  medalImg.src = loseMedal;
 }
 
-
-
-// -------------------
-// Play Again Button Logic
-// -------------------
-let hasClicked = false; 
+let hasClicked = false;
 let playersReady = 0;
 const totalPlayers = 2;
 
-// Update ready count from server
 socket.on('update_ready_count', (data) => {
-    playersReady = data.ready_players;
-
-    if (hasClicked && playersReady < totalPlayers) {
-        playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
-    } else {
-        playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers}`;
-    }
+  playersReady = data.ready_players;
+  playBtn.innerText = hasClicked && playersReady < totalPlayers
+    ? `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`
+    : `PLAY AGAIN ${playersReady}/${totalPlayers}`;
 });
 
-// Click to signal ready
 playBtn.onclick = () => {
-    if (hasClicked) return;
-    hasClicked = true;
-    playersReady = Math.max(playersReady, 1);
-    socket.emit('player_ready', { room_code: roomCode, username });
-    playBtn.classList.add('clicked');
-    playBtn.style.opacity = "0.7";
-    playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
+  if (hasClicked) return;
+  hasClicked = true;
+  socket.emit('player_ready', { room_code: roomCode, username });
+  playBtn.classList.add('clicked');
+  playBtn.style.opacity = "0.7";
+  playBtn.innerText = `PLAY AGAIN ${playersReady}/${totalPlayers} (waiting...)`;
 };
 
-// Redirect when server signals game start
 socket.on('redirect_to_game', (data) => {
-    window.location.href = `/choose.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
+  window.location.href = `/choose.html?room=${data.room_code}&username=${encodeURIComponent(data.username)}`;
 });
 
-// -------------------
-// Modal / Leave Logic
-// -------------------
 const leaveModal = document.getElementById("leaveModal");
-const confirmLeaveBtn = document.getElementById("confirmLeaveBtn");
-const cancelLeaveBtn = document.getElementById("cancelLeaveBtn");
-
 leaveBtn.onclick = () => leaveModal.style.display = "flex";
-
-confirmLeaveBtn.onclick = () => {
-    socket.emit('leave_game', { room_code: roomCode, username });
-    window.location.href = "/";
+document.getElementById("confirmLeaveBtn").onclick = () => {
+  socket.emit('leave_game', { room_code: roomCode, username });
+  window.location.href = "/";
 };
+document.getElementById("cancelLeaveBtn").onclick = () => leaveModal.style.display = "none";
+window.onclick = (e) => { if (e.target === leaveModal) leaveModal.style.display = "none"; };
 
-cancelLeaveBtn.onclick = () => leaveModal.style.display = "none";
-
-// Close modal if clicking outside
-window.onclick = (event) => {
-    if (event.target === leaveModal) leaveModal.style.display = "none";
-};
-
-// Chat functionality
 const chatInput = document.getElementById('chatInput');
+socket.on('chat_message', data => {
+  const div = document.createElement('div');
+  const isMe = data.username === username;
+  div.className = `msg ${isMe ? 'you' : 'opponent'}`;
+  div.textContent = `${data.username}: ${data.message}`;
+  document.getElementById('chatMessages').appendChild(div);
+  document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+});
 
-    socket.on('chat_message', data => {
-      console.log('💬 Received chat_message:', data);
-      const div = document.createElement('div');
-      const isMe = data.username === username;
-      const isSystem = data.username === 'System';
-      
-      if (isSystem) {
-        div.className = 'msg system';
-      } else {
-        div.className = `msg ${isMe ? 'you' : 'opponent'}`;
-      }
-      
-      div.textContent = `${data.username}: ${data.message}`;
-      
-      const chatMessages = document.getElementById('chatMessages');
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-
-    document.getElementById('messageForm').onsubmit = e => {
-      e.preventDefault();
-      if (!chatInput.value.trim()) return;
-      
-      console.log('📤 Sending chat message:', chatInput.value.trim());
-      socket.emit('chat_message', { 
-        room_code: roomCode, 
-        username, 
-        message: chatInput.value.trim() 
-      });
-      chatInput.value = '';
-    };
-
+document.getElementById('messageForm').onsubmit = e => {
+  e.preventDefault();
+  if (!chatInput.value.trim()) return;
+  socket.emit('chat_message', { room_code: roomCode, username, message: chatInput.value.trim() });
+  chatInput.value = '';
+};
 </script>
 
 </body>

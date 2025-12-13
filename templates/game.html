@@ -36,7 +36,7 @@
     .help {
       position: absolute;
       top: 1.5vh;
-      right: 1vw; /* upper-right corner */
+      right: 1vw;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -56,8 +56,6 @@
     .help:hover {
       opacity: 0.8;
     }
-
-
 
     main {
       width: 95vw;
@@ -108,13 +106,11 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
-    /* Hover for all cards */
     .game-card:hover:not(.selected):not(.crossed) {
       transform: scale(1.08);
       z-index: 10;
     }
 
-    /* Selected state - strong visual feedback */
     .game-card.selected {
       transform: scale(1.15);
       z-index: 20;
@@ -123,7 +119,6 @@
       outline-offset: 4px;
     }
 
-    /* Crossed out */
     .game-card.crossed {
       opacity: 0.4;
     }
@@ -243,19 +238,17 @@
       position: absolute;
       inset: 0;
       border-radius: 15px;
-      z-index: 1; /* BACKGROUND */
+      z-index: 1;
     }
 
-    
     .your-card-display img {
       width: 85%;
       height: 65%;
       object-fit: contain;
       position: relative;
-      z-index: 2; /* IMAGE ON TOP */
+      z-index: 2;
     }
 
-    
     .your-card-name {
       font-family: 'Bungee Inline';
       font-size: clamp(12px, 1.2vw, 16px);
@@ -326,7 +319,6 @@
       background: #9370db;
     }
 
-    /* Modal overlay - matching result.html */
     .modal {
       display: none;
       position: fixed;
@@ -340,7 +332,6 @@
       align-items: center;
     }
 
-    /* Modal box - matching result.html */
     .modal-content {
       background: #1E1E2F;
       padding: 40px;
@@ -352,7 +343,6 @@
       width: 85vw;
     }
 
-    /* Modal text - matching result.html */
     .modal-text {
       font-family: 'Bungee Inline', cursive;
       font-size: clamp(24px, 4vw, 36px);
@@ -368,7 +358,6 @@
       line-height: 1.4;
     }
 
-    /* Modal buttons - matching result.html */
     .modal-buttons {
       display: flex;
       justify-content: center;
@@ -418,7 +407,6 @@
 <div class="back" onclick="surrenderGame()">Surrender</div>
 <div class="help" onclick="openInstructions()">?</div>
 
-<!-- Custom Modal - Consistent with result.html -->
 <div id="gameModal" class="modal">
   <div class="modal-content">
     <div class="modal-text" id="modalTitle">Alert</div>
@@ -481,16 +469,11 @@
     let turnInitialized = false;
     let myWrongGuesses = 0;
 
-    console.log('🎮 ===== GAME.HTML LOADED =====');
-    console.log('📋 URL Parameters:', { roomCode, username, myChoiceId, firstTurn });
-
     if (!roomCode || !username || !myChoiceId) {
-      console.error('❌ Missing required parameters!');
       showModal('Error', 'Missing game data. Returning to menu...');
       setTimeout(() => location.href = '/', 2000);
     }
 
-    console.log('✅ All required parameters present');
     socket.emit('join_game_room', { room_code: roomCode, username });
 
     const memes = [
@@ -511,7 +494,6 @@
       {id:15, name:"Confused Gandalf", img:"/static/img/15.png", color:"blue"}
     ];
 
-    // Custom modal function - matching result.html style
     function showModal(title, message, isConfirm = false) {
       return new Promise((resolve) => {
         const modal = document.getElementById('gameModal');
@@ -553,15 +535,11 @@
       }
     }
 
-    // Close modal if clicking outside
     window.onclick = (event) => {
       const modal = document.getElementById('gameModal');
-      if (event.target === modal) {
-        closeModal();
-      }
+      if (event.target === modal) closeModal();
     };
 
-    // Show your meme
     const myMeme = memes.find(m => m.id === myChoiceId);
     if (myMeme) {
       document.getElementById('yourCardImg').src = myMeme.img;
@@ -569,7 +547,6 @@
       document.getElementById('yourCardBg').className = `card-bg bg-${myMeme.color}`;
     }
 
-    // Build grid
     const grid = document.getElementById('gameGrid');
     memes.forEach(m => {
       const card = document.createElement('div');
@@ -581,7 +558,6 @@
         <div class="card-name">${m.name}</div>
       `;
 
-      // Double-click = cross out (ANYTIME)
       card.ondblclick = (e) => {
         e.stopPropagation();
         card.classList.toggle('crossed');
@@ -591,7 +567,6 @@
         }
       };
 
-      // Single click = select for guessing (only during your turn)
       card.onclick = () => {
         if (!isMyTurn) return;
         
@@ -616,9 +591,8 @@
     const resetBtn = document.querySelector('#resetBtn button');
     const skipBtn = document.querySelector('#skipBtn button');
     const chatInput = document.getElementById('chatInput');
-    const sendBtn = document.getElementById('sendBtn');
 
-    function updateTurnUI(myTurnNow, currentPlayer) {
+    function updateTurnUI(myTurnNow) {
         isMyTurn = myTurnNow;
         const indicator = document.getElementById('turnIndicator');
         indicator.textContent = isMyTurn ? 'Your turn.' : "Opponent's turn.";
@@ -632,48 +606,23 @@
         }
     }
 
-
-
-    if (!turnInitialized && firstTurn) {
-      // Wait until we know the opponent's username
-      socket.on('room_users', data => {
-        // data.users is an array of usernames in the room
-        opponentUsername = data.users.find(u => u !== username);
-        console.log('👥 Opponent username set to:', opponentUsername);
-
-        const myTurnNow = firstTurn === username;
-        const currentPlayerName = myTurnNow ? username : opponentUsername;
-        updateTurnUI(myTurnNow, currentPlayerName);
-        turnInitialized = true;
-      });
-    } else {
-      console.log('⚠️ No turn parameter in URL');
-      guessBtn.disabled = true;
-      skipBtn.disabled = true;
+    if (firstTurn) {
+      const myTurnNow = firstTurn === username;
+      updateTurnUI(myTurnNow);
+      turnInitialized = true;
     }
 
-
-
-
     socket.on('turn_update', data => {
-      console.log('📡 Received turn_update:', data);
-
       const myTurnNow = data.current_turn === username;
-      const currentPlayerName = myTurnNow ? username : opponentUsername || 'Opponent';
-
-      updateTurnUI(myTurnNow, currentPlayerName);
+      updateTurnUI(myTurnNow);
     });
-
 
     setTimeout(() => {
       if (!turnInitialized) {
-        console.log('⚠️ Requesting turn update from server');
         socket.emit('request_turn_update', { room_code: roomCode });
       }
-    }, 500); // smaller timeout for faster update
+    }, 500);
 
-
-    // "It's you!" button
     guessBtn.onclick = async () => {
       if (!isMyTurn) {
         await showModal('Not Your Turn', "Wait for your turn!");
@@ -683,10 +632,7 @@
         await showModal('No Selection', "Select a card first by clicking on it!");
         return;
       }
-      
-      console.log('🎯 Making guess:', selectedCard);
 
-      // Disable buttons immediately
       guessBtn.disabled = true;
       skipBtn.disabled = true;
 
@@ -696,9 +642,6 @@
       selectedCard = null;
     };
 
-
-
-    // Skip turn button
     skipBtn.onclick = async () => {
       if (!isMyTurn) {
         await showModal('Not Your Turn', "Wait for your turn!");
@@ -707,10 +650,7 @@
       
       const confirmed = await showModal('Skip Turn?', 'Pass your turn to the opponent?', true);
       if (confirmed) {
-        console.log('⏭️ Skipping turn');
         socket.emit('skip_turn', { room_code: roomCode, username });
-        
-        // Clear selection and disable buttons
         document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
         selectedCard = null;
         guessBtn.disabled = true;
@@ -718,54 +658,37 @@
       }
     };
 
-
-    // Reset board button
     resetBtn.onclick = () => {
-      console.log('🔄 Resetting board');
       document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
     };
 
-    // Listen for question rejection
     socket.on('question_rejected', data => {
-      console.log('❌ Question rejected:', data.reason);
-      
-      // Show error in chat
       const div = document.createElement('div');
       div.className = 'msg error';
       div.textContent = `❌ ${data.reason}`;
-      
+      document.getElementById('chatMessages').appendChild(div);
+      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+    });
+
+    socket.on('chat_message', data => {
+      const div = document.createElement('div');
+      if (data.username === 'System') {
+        div.className = 'msg system';
+        div.textContent = `💬 ${data.message}`;
+      } else {
+        const isMe = data.username === username;
+        div.className = `msg ${isMe ? 'you' : 'opponent'}`;
+        const sender = isMe ? "You" : "Opponent";
+        div.textContent = `${sender}: ${data.message}`;
+      }
       const chatMessages = document.getElementById('chatMessages');
       chatMessages.appendChild(div);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-          // Always display the correct name
-        socket.on('chat_message', data => {
-            const div = document.createElement('div');
-
-            if (data.username === 'System') {
-                div.className = 'msg system';
-                div.textContent = `💬 ${data.message}`;
-            } else {
-                const isMe = data.username === username;
-                div.className = `msg ${isMe ? 'you' : 'opponent'}`;
-
-                // Hide real usernames, show "You" / "Opponent"
-                const sender = isMe ? "You" : "Opponent";
-                div.textContent = `${sender}: ${data.message}`;
-            }
-
-            const chatMessages = document.getElementById('chatMessages');
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-
-
     document.getElementById('messageForm').onsubmit = e => {
       e.preventDefault();
       if (!chatInput.value.trim()) return;
-      
-      console.log('📤 Sending chat message:', chatInput.value.trim());
       socket.emit('chat_message', { 
         room_code: roomCode, 
         username, 
@@ -774,18 +697,18 @@
       chatInput.value = '';
     };
 
-    // Guess result
+    // FIXED guess_result handler
     socket.on('guess_result', async data => {
         if (data.success) {
             const winner = data.guesser === username ? "You" : "Opponent";
             await showModal('Victory!', `Correct! ${winner} wins! It was ${data.correct_meme_name}`);
         } else {
-            if (data.guessed_id) {
+            // Only cross out and show wrong guess count if I am the guesser
+            if (data.guesser === username && data.guessed_id) {
                 const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
-                if (wrongCard && !wrongCard.classList.contains('crossed')) wrongCard.classList.add('crossed');
-            }
-
-            if (data.guesser === username) {
+                if (wrongCard && !wrongCard.classList.contains('crossed')) {
+                    wrongCard.classList.add('crossed');
+                }
                 myWrongGuesses++;
                 await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
             } else {
@@ -794,14 +717,9 @@
         }
     });
 
-
-
-    // Game over
     socket.on('game_over', async data => {
-      console.log('🏁 Game over:', data);
-      
       let message = '';
-      const winnerIsMe = data.winner === username; // Boolean
+      const winnerIsMe = data.winner === username;
       const winnerName = winnerIsMe ? "You" : "Opponent";
       const verb = winnerIsMe ? "win" : "wins";
 
@@ -817,40 +735,27 @@
       
       await showModal('Game Over', message);
 
-      // PASS THE ACTUAL WINNER USERNAME, NOT "You"/"Opponent"
       setTimeout(() => {
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
       }, 1000);
     });
 
-
-
-
-    // Surrender function
     async function surrenderGame() {
       const confirmed = await showModal('Surrender?', 'Give up and lose the game?', true);
       if (confirmed) {
-        console.log('🏳️ Surrendering game...');
         socket.emit('surrender', { room_code: roomCode, username });
         location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=Opponent&surrender=true`;
       }
     }
 
-   function openInstructions() {
-        const returnUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${encodeURIComponent(username)}`;
-        window.location.href = `/instructions?return_url=${encodeURIComponent(returnUrl)}`;
+    function openInstructions() {
+      const returnUrl = `/game.html?room=${roomCode}&username=${encodeURIComponent(username)}&choice=${myChoiceId}&turn=${encodeURIComponent(username)}`;
+      window.location.href = `/instructions?return_url=${encodeURIComponent(returnUrl)}`;
     }
 
-    // Handle disconnection
     socket.on('player_disconnected', async data => {
-      console.log('🔌 Player disconnected:', data);
       await showModal('Player Disconnected', `${data.username} disconnected. Game over.`);
       location.href = '/';
-    });
-
-    // Log all socket events for debugging
-    socket.onAny((eventName, ...args) => {
-      console.log('📡 Socket event received:', eventName, args);
     });
   </script>
 </body>

@@ -201,12 +201,7 @@ body {
     <div class="buttons-section">
       <div id="start-btn" class="button">Start Game</div>
       
-        <div id="howto-btn" class="button" onclick="goToInstructions()">How to Play</div>
-<script>
-function goToInstructions() {
-    window.location.href = "/instructions";
-}
-</script>
+      <div id="howto-btn" class="button">How to Play</div>
       
       <div id="settings-btn" class="button">Settings</div>
       <div id="messages"></div>
@@ -242,7 +237,7 @@ document.getElementById("username-submit").addEventListener("click", () => {
 });
 
 document.getElementById("howto-btn").addEventListener("click", () => {
-    alert("Click on a card to guess the MEME.");
+    window.location.href = "/instructions";
 });
 
 document.getElementById("settings-btn").addEventListener("click", () => {
