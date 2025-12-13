@@ -342,26 +342,26 @@ const medalImg = document.querySelector(".medal-img");
 const winMedal = "{{ url_for('static', filename='img/golden-medal.png') }}";
 const loseMedal = "{{ url_for('static', filename='img/silver-medal.png') }}";
 
-// Join game room for Play Again functionality
-socket.emit('join_game_room', { room_code: roomCode, username });
+const params = new URLSearchParams(window.location.search);
+const winner = params.get("winner");
 
-// Update result text on game_over
-socket.on("game_over", (data) => {
-    if (data.username !== username) return; // Only update for this player
+const isWinner = username === winner;
 
-    if (data.result === "win") {
-        statusText.textContent = "YOU WON!";
-        statusText.style.color = "#ffea00";
-        statusText.style.textShadow = "0 0 20px #ffea00";
-        medalImg.src = winMedal;
-    } else {
-        statusText.textContent = "YOU LOST!";
-        statusText.style.color = "#3b82f6";
-        statusText.style.textShadow = "0 0 20px #3b82f6";
-        medalImg.src = loseMedal;
-    }
-    playerNameText.textContent = username;
-});
+// Set result immediately
+if (isWinner) {
+    statusText.textContent = "YOU WON!";
+    statusText.style.color = "#ffea00";
+    statusText.style.textShadow = "0 0 20px #ffea00";
+    medalImg.src = winMedal;
+} else {
+    statusText.textContent = "YOU LOST!";
+    statusText.style.color = "#3b82f6";
+    statusText.style.textShadow = "0 0 20px #3b82f6";
+    medalImg.src = loseMedal;
+}
+
+playerNameText.textContent = username;
+
 
 // -------------------
 // Play Again Button Logic

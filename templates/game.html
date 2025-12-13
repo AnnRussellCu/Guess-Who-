@@ -240,14 +240,21 @@
     }
     
     .your-card-display .card-bg {
+      position: absolute;
+      inset: 0;
       border-radius: 15px;
+      z-index: 1; /* BACKGROUND */
     }
+
     
     .your-card-display img {
       width: 85%;
       height: 65%;
       object-fit: contain;
+      position: relative;
+      z-index: 2; /* IMAGE ON TOP */
     }
+
     
     .your-card-name {
       font-family: 'Bungee Inline';
@@ -788,8 +795,9 @@
       await showModal('Game Over', message);
       
       setTimeout(() => {
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}`;
+        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
       }, 1000);
+
     });
 
     // Surrender function
