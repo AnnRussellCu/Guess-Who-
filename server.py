@@ -9,32 +9,42 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-rooms = {} # { room_code: [player1, player2] }
+# { room_code: [player1, player2] }
+rooms = {}
 
-player_choices = {} # { room_code: { sid: {username, choice} } }
+# { room_code: { sid: {username, choice} } }
+player_choices = {}
 
 # { room_code: Timer }
 active_timers = {}
 timer_lock = Lock()
 
-ready_players = {} # { room_code: set() }
+# { room_code: set() }
+ready_players = {}
 
-current_turns = {} # { room_code: username }
+# { room_code: username }
+current_turns = {}
 
-player_sids = {} # username -> sid
+# username -> sid
+player_sids = {}
 
-wrong_guesses = {} # { room_code: { username: count } }
+# { room_code: { username: count } }
+wrong_guesses = {}
 
-sid_to_username = {} # sid -> username
+# sid -> username
+sid_to_username = {}
 
-sid_to_room = {} # sid -> room_code
+# sid -> room_code
+sid_to_room = {}
 
 # Track players in result phase (don't trigger disconnect for them)
 in_result_phase = {}  # { room_code: set(usernames) }
 
+
 # ---------------------
 # QUESTION FILTERING
 # ---------------------
+
 BANNED_WORDS = [
     'red', 'blue', 'green', 'yellow',
     'color', 'colour', 'colored', 'coloured',
@@ -76,9 +86,11 @@ def filter_question(message):
     
     return True, ""
 
+
 # ---------------------
 # ROUTES
 # ---------------------
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -129,9 +141,11 @@ def result_page():
 def instructions_page():
     return render_template('instructions.html')
 
+
 # ---------------------
 # ROOM CREATION / JOIN
 # ---------------------
+
 @socketio.on('create_room')
 def handle_create_room(data):
     username = data['username']
@@ -153,6 +167,7 @@ def handle_create_room(data):
 
     emit('room_created', room_code)
     emit('update_players', rooms[room_code], room=room_code)
+
 
 @socketio.on('join_room_event')
 def handle_join_room(data):
@@ -181,6 +196,7 @@ def handle_join_room(data):
 
     emit('update_players', rooms[room_code], room=room_code)
     emit('join_result', {'success': True, 'host': rooms[room_code][0]}, to=request.sid)
+
 
 @socketio.on('join_game_room')
 def handle_join_game_room(data):
@@ -231,6 +247,7 @@ def handle_join_result_room(data):
         print(f"[RESULT] Sending player list to {username}: {rooms[room_code]}")
         emit('update_players', rooms[room_code], room=room_code)
 
+
 # ---------------------
 # CHOOSE TIMER
 # ---------------------
@@ -250,9 +267,11 @@ def start_choose_timer(room_code):
         timer.start()
         active_timers[room_code] = timer
 
+
 # ---------------------
 # GAME START → CHOOSE PHASE
 # ---------------------
+
 @socketio.on('start_game')
 def handle_start_game(data):
     room_code = data.get('room_code')
@@ -272,9 +291,11 @@ def handle_start_game(data):
             'username': player
         }, room=room_code)
 
+
 # ---------------------
 # PLAYER READY (FOR REMATCH)
 # ---------------------
+
 @socketio.on('player_ready')
 def handle_player_ready(data):
     room_code = data.get('room_code')
@@ -318,9 +339,11 @@ def handle_player_ready(data):
             'username': 'placeholder'
         }, room=room_code)
 
+
 # ---------------------
 # PLAYER PICK
 # ---------------------
+
 @socketio.on('player_chose')
 def player_chose(data):
     room = data['room_code']
@@ -359,9 +382,11 @@ def player_chose(data):
                 del active_timers[room]
         finish_choose_phase(room)
 
+
 # ---------------------
 # FINISH CHOOSE PHASE
 # ---------------------
+
 def finish_choose_phase(room_code):
     print(f"\n[FINISH] ========== FINISHING CHOOSE PHASE ==========")
     print(f"[FINISH] Room: {room_code}")
@@ -443,9 +468,11 @@ def finish_choose_phase(room_code):
     
     print(f"[FINISH] ========== CHOOSE PHASE COMPLETE ==========\n")
 
+
 # ---------------------
 # CHAT (GAMEPLAY + RESULT)
 # ---------------------
+
 @socketio.on('chat_message')
 def handle_chat_message(data):
     room_code = data.get('room_code')
@@ -462,13 +489,17 @@ def handle_chat_message(data):
     
     print(f"[CHAT] {username} in {room_code}: {message}")
     
-    # Only filter questions during gameplay (when there's a turn system)
-    if room_code in current_turns and current_turns.get(room_code) == username:
-        is_valid, error_message = filter_question(message)
-        if not is_valid:
-            emit('question_rejected', {'reason': error_message}, to=request.sid)
-            print(f"[CHAT] Question rejected: {error_message}")
-            return
+    # Only filter questions during active gameplay (not in result phase)
+    is_in_result = room_code in in_result_phase and username in in_result_phase[room_code]
+    
+    if not is_in_result and room_code in current_turns:
+        # During gameplay, only validate if it's the player's turn
+        if current_turns.get(room_code) == username:
+            is_valid, error_message = filter_question(message)
+            if not is_valid:
+                emit('question_rejected', {'reason': error_message}, to=request.sid)
+                print(f"[CHAT] Question rejected: {error_message}")
+                return
     
     # Broadcast message to all players in room
     socketio.emit('chat_message', {
@@ -477,9 +508,11 @@ def handle_chat_message(data):
     }, room=room_code)
     print(f"[CHAT] Message broadcasted to room {room_code}")
 
+
 # ---------------------
 # GAMEPLAY - GUESSES & TURNS
 # ---------------------
+
 @socketio.on('make_guess')
 def handle_make_guess(data):
     room_code = data['room_code']
@@ -582,6 +615,7 @@ def handle_make_guess(data):
             'current_turn': current_turns[room_code]
         }, room=room_code)
 
+
 @socketio.on('request_turn_update')
 def handle_request_turn_update(data):
     room_code = data.get('room_code')
@@ -594,6 +628,7 @@ def handle_request_turn_update(data):
         if room_code in rooms and len(rooms[room_code]) > 0:
             current_turns[room_code] = rooms[room_code][0]
             emit('turn_update', {'current_turn': current_turns[room_code]}, to=request.sid)
+
 
 @socketio.on('skip_turn')
 def handle_skip_turn(data):
@@ -611,6 +646,7 @@ def handle_skip_turn(data):
             'username': 'System',
             'message': f'{username} skipped a turn'
         }, room=room_code)
+
 
 @socketio.on('surrender')
 def handle_surrender(data):
@@ -635,9 +671,11 @@ def handle_surrender(data):
         if opponent_sid:
             socketio.emit('game_over', game_over_data, to=opponent_sid)
 
+
 # ---------------------
 # LEAVE GAME
 # ---------------------
+
 @socketio.on('leave_game')
 def handle_leave_game(data):
     room_code = data['room_code']
@@ -662,6 +700,7 @@ def handle_leave_game(data):
             for d in [rooms, player_choices, ready_players, current_turns, wrong_guesses, in_result_phase]:
                 d.pop(room_code, None)
             print(f"[LEAVE] Room {room_code} cleaned up")
+
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -715,9 +754,11 @@ def handle_disconnect():
     if request.sid in sid_to_room:
         del sid_to_room[request.sid]
 
+
 # ---------------------
 # HELPER
 # ---------------------
+
 def get_meme_name(meme_id):
     memes = {
         1: "Doubter", 2: "Conspiracy Keanu", 3: "Mini Keanu", 4: "Eye Roll",
