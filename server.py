@@ -580,7 +580,7 @@ def handle_skip_turn(data):
         socketio.emit('turn_update', {'current_turn': opponent}, room=room_code)
         socketio.emit('chat_message', {
             'username': 'System',
-            'message': f'{username} skipped their turn'
+            'message': f'{opponent} skipped their turn'
         }, room=room_code)
 
 

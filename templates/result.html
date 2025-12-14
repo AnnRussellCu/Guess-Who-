@@ -343,7 +343,7 @@ document.getElementById('messageForm').onsubmit = e => {
 
 // Handle player disconnect
 socket.on('player_disconnected', data => {
-  alert(`${data.username} left the room. Returning to menu...`);
+  alert(`${opponent} left the room. Returning to menu...`);
   window.location.href = '/';
 });
 </script>

@@ -893,7 +893,7 @@
     }
 
     socket.on('player_disconnected', async data => {
-      await showModal('Player Disconnected', `${data.username} disconnected. You win by default!`);
+      await showModal('Player Disconnected', `${opponent} disconnected. You win by default!`);
       sessionStorage.removeItem(`gameState_${roomCode}`);
       
       // Navigate to result page as winner
