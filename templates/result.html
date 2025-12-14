@@ -84,7 +84,7 @@
       transition: all 0.3s;
     }
 
-    .leave-btn    { top: 325px; left: 1031px; background: #10B981; }
+    .leave-btn { top: 325px; left: 1031px; background: #10B981; }
     .playagain-btn { top: 510px; left: 1031px; background: #60A5FA; }
 
     .leave-btn.disabled, .playagain-btn.disabled {
@@ -96,6 +96,71 @@
     .leave-btn:hover:not(.disabled) { background: #EF4444; }
     .playagain-btn:hover:not(.disabled) { background: #316ac7; }
 
+    /* Mobile/Tablet layout adjustments */
+    @media (max-width: 1200px) {
+      .leave-btn, .playagain-btn {
+        position: fixed;
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: clamp(250px, 80vw, 350px);
+        height: clamp(50px, 7vh, 60px);
+        font-size: clamp(18px, 4vw, 28px);
+        line-height: clamp(50px, 7vh, 60px);
+        z-index: 100;
+      }
+
+      .leave-btn {
+        top: auto !important;
+        bottom: clamp(140px, 18vh, 180px);
+      }
+
+      .playagain-btn {
+        top: auto !important;
+        bottom: clamp(60px, 9vh, 100px);
+      }
+
+      .box {
+        position: absolute;
+        top: clamp(80px, 15vh, 150px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(833px, 85vw);
+        height: auto;
+        aspect-ratio: 833 / 554;
+      }
+    }
+
+    /* Extra small mobile adjustments */
+    @media (max-width: 599px) {
+      .leave-btn, .playagain-btn {
+        width: clamp(220px, 85vw, 300px);
+        height: clamp(48px, 6.5vh, 55px);
+        font-size: clamp(16px, 4.5vw, 24px);
+        line-height: clamp(48px, 6.5vh, 55px);
+      }
+
+      .leave-btn {
+        bottom: clamp(120px, 16vh, 150px);
+      }
+
+      .playagain-btn {
+        bottom: clamp(50px, 8vh, 80px);
+      }
+
+      .box {
+        top: clamp(60px, 12vh, 120px);
+        width: min(90vw, 400px);
+      }
+
+      .you-won {
+        font-size: clamp(32px, 8vw, 60px);
+      }
+
+      .medal-img {
+        width: clamp(100px, 22vw, 180px);
+      }
+    }
+
     .modal {
       display: none;
       position: fixed;
@@ -104,20 +169,22 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
+      padding: 20px;
     }
 
     .modal-content {
       background: #1E1E2F;
-      padding: clamp(30px, 4vw, 40px);
+      padding: clamp(25px, 4vw, 40px);
       border-radius: 20px;
       text-align: center;
       box-shadow: 0 0 20px #000;
       max-width: 90%;
+      width: 500px;
     }
 
     .modal-text {
       font-family: 'Bungee Inline', cursive;
-      font-size: clamp(28px, 4vw, 36px);
+      font-size: clamp(24px, 4vw, 36px);
       margin-bottom: 20px;
       color: #a78bfa;
     }
@@ -139,7 +206,7 @@
 
     .modal-buttons button {
       font-family: 'Bungee Inline', cursive;
-      font-size: clamp(22px, 2.8vw, 28px);
+      font-size: clamp(18px, 2.8vw, 28px);
       padding: 10px 30px;
       border: none;
       border-radius: 12px;
@@ -168,50 +235,70 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      width: clamp(300px, 30vw, 400px);
-      max-height: 400px;
+      width: clamp(280px, 35vw, 400px);
+      max-height: min(400px, 40vh);
       background: #374151;
       border-radius: 10px;
-      padding: 1.5vh 1vw;
+      padding: clamp(10px, 1.5vh, 15px) clamp(8px, 1vw, 12px);
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       z-index: 9999;
     }
 
+    @media (max-width: 599px) {
+      .chat-box {
+        width: calc(100vw - 40px);
+        max-width: 350px;
+        right: 20px;
+        left: 20px;
+        margin: 0 auto;
+        max-height: 35vh;
+      }
+    }
+
     #chatMessages {
       flex: 1;
       overflow-y: auto;
-      font-size: clamp(16px, 1.8vw, 24px);
+      font-size: clamp(14px, 2vw, 24px);
       margin-bottom: 1vh;
       font-family: 'Dokdo', cursive;
+      min-height: 100px;
     }
 
     .msg { margin: 0.5vh 0; word-wrap: break-word; }
     .msg.you { color: #de7d4a; }
     .msg.opponent { color: #a78bfa; }
 
-    #messageForm { display: flex; gap: 1vw; align-items: center; }
+    #messageForm { 
+      display: flex; 
+      gap: clamp(6px, 1vw, 10px); 
+      align-items: center; 
+    }
+    
     #chatInput {
       flex: 1;
-      padding: 8px 10px;
+      padding: clamp(6px, 1vh, 10px) clamp(8px, 1vw, 12px);
       background: #d9d9d9;
       border: none;
       border-radius: 10px;
-      font-size: 16px;
+      font-size: clamp(12px, 1.8vw, 16px);
       font-family: 'Bungee Inline', cursive;
       outline: none;
     }
+    
     #sendBtn {
-      width: 50px;
-      height: 50px;
+      width: clamp(40px, 6vw, 50px);
+      height: clamp(40px, 6vw, 50px);
       background: #a78bfa;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       color: white;
-      font-size: 20px;
+      font-size: clamp(16px, 2.5vw, 20px);
+      flex-shrink: 0;
     }
+    
     #sendBtn:hover { background: #9370db; }
   </style>
 </head>
