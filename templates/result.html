@@ -118,7 +118,23 @@
     .modal-text {
       font-family: 'Bungee Inline', cursive;
       font-size: clamp(28px, 4vw, 36px);
+      margin-bottom: 20px;
+      color: #a78bfa;
+    }
+
+    .modal-message {
+      font-family: 'Dokdo', cursive;
+      font-size: clamp(18px, 3vw, 28px);
       margin-bottom: 30px;
+      color: #fff;
+      line-height: 1.4;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
 
     .modal-buttons button {
@@ -129,12 +145,24 @@
       border-radius: 12px;
       cursor: pointer;
       color: #fff;
+      min-width: 120px;
     }
 
-    #confirmLeaveBtn { background: #EF4444; }
-    #confirmLeaveBtn:hover { background: #DC2626; }
-    #cancelLeaveBtn { background: #10B981; }
-    #cancelLeaveBtn:hover { background: #059669; }
+    .modal-buttons .btn-primary {
+      background: #10B981;
+    }
+
+    .modal-buttons .btn-primary:hover {
+      background: #059669;
+    }
+
+    .modal-buttons .btn-secondary {
+      background: #EF4444;
+    }
+
+    .modal-buttons .btn-secondary:hover {
+      background: #DC2626;
+    }
 
     .chat-box {
       position: fixed;
@@ -156,6 +184,7 @@
       overflow-y: auto;
       font-size: clamp(16px, 1.8vw, 24px);
       margin-bottom: 1vh;
+      font-family: 'Dokdo', cursive;
     }
 
     .msg { margin: 0.5vh 0; word-wrap: break-word; }
@@ -203,10 +232,21 @@
 
 <div id="leaveModal" class="modal">
   <div class="modal-content">
-    <div class="modal-text">Are you sure you want to leave the game?</div>
+    <div class="modal-text">Leave Room?</div>
+    <div class="modal-message">Are you sure you want to leave the game?</div>
     <div class="modal-buttons">
-      <button id="confirmLeaveBtn">Yes</button>
-      <button id="cancelLeaveBtn">No</button>
+      <button id="cancelLeaveBtn" class="btn-primary">No</button>
+      <button id="confirmLeaveBtn" class="btn-secondary">Yes</button>
+    </div>
+  </div>
+</div>
+
+<div id="disconnectModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-text">Player Disconnected</div>
+    <div class="modal-message" id="disconnectMessage">Opponent left the room. Returning to menu...</div>
+    <div class="modal-buttons">
+      <button id="disconnectOkBtn" class="btn-primary">OK</button>
     </div>
   </div>
 </div>
@@ -221,7 +261,13 @@
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
-const socket = io();
+const socket = io({
+  transports: ['websocket', 'polling'],
+  upgrade: true,
+  rememberUpgrade: true,
+  forceNew: true
+});
+
 const playBtn = document.getElementById("playagainMainBtn");
 const leaveBtn = document.getElementById("leaveMainBtn");
 const params = new URLSearchParams(window.location.search);
@@ -257,17 +303,23 @@ if (isWinner) {
 let hasClicked = false;
 let playersReady = 0;
 const totalPlayers = 2;
+let opponentUsername = null;
 
 console.log(`[RESULT] Loaded result page for ${username} in room ${roomCode}`);
 
-// Join the result room
-socket.emit('join_result_room', { room_code: roomCode, username });
-console.log(`[RESULT] Emitted join_result_room`);
+socket.on('connect', () => {
+  console.log(`[RESULT] Socket connected: ${socket.id}`);
+  // Join the result room
+  socket.emit('join_result_room', { room_code: roomCode, username });
+  console.log(`[RESULT] Emitted join_result_room`);
+});
 
-// Request current ready count after joining
-setTimeout(() => {
-  console.log(`[RESULT] Requesting ready count update`);
-}, 500);
+// Listen for player updates
+socket.on('update_players', players => {
+  console.log(`[RESULT] Players in room:`, players);
+  opponentUsername = players.find(p => p !== username);
+  console.log(`[RESULT] Opponent: ${opponentUsername}`);
+});
 
 // Listen for ready count updates
 socket.on('update_ready_count', (data) => {
@@ -326,10 +378,12 @@ window.onclick = (e) => {
 const chatInput = document.getElementById('chatInput');
 
 socket.on('chat_message', data => {
+  console.log(`[RESULT CHAT] Received message:`, data);
   const div = document.createElement('div');
   const isMe = data.username === username;
   div.className = `msg ${isMe ? 'you' : 'opponent'}`;
-  div.textContent = `${data.username}: ${data.message}`;
+  const sender = isMe ? "You" : "Opponent";
+  div.textContent = `${sender}: ${data.message}`;
   document.getElementById('chatMessages').appendChild(div);
   document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
 });
@@ -337,14 +391,29 @@ socket.on('chat_message', data => {
 document.getElementById('messageForm').onsubmit = e => {
   e.preventDefault();
   if (!chatInput.value.trim()) return;
+  console.log(`[RESULT CHAT] Sending message: ${chatInput.value.trim()}`);
   socket.emit('chat_message', { room_code: roomCode, username, message: chatInput.value.trim() });
   chatInput.value = '';
 };
 
-// Handle player disconnect
+// Handle player disconnect with modal
+const disconnectModal = document.getElementById('disconnectModal');
+const disconnectMessage = document.getElementById('disconnectMessage');
+const disconnectOkBtn = document.getElementById('disconnectOkBtn');
+
 socket.on('player_disconnected', data => {
-  alert(`${opponent} left the room. Returning to menu...`);
+  console.log(`[RESULT] Player disconnected:`, data);
+  const disconnectedPlayer = data.username || opponentUsername || 'Opponent';
+  disconnectMessage.textContent = `${disconnectedPlayer} left the room. Returning to menu...`;
+  disconnectModal.style.display = 'flex';
+});
+
+disconnectOkBtn.onclick = () => {
   window.location.href = '/';
+};
+
+socket.on('disconnect', () => {
+  console.log(`[RESULT] Socket disconnected`);
 });
 </script>
 

@@ -53,9 +53,7 @@
       text-align: center;
     }
 
-    .help:hover {
-      opacity: 0.8;
-    }
+    .help:hover { opacity: 0.8; }
 
     main {
       width: 95vw;
@@ -264,6 +262,7 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      overflow: hidden;
     }
     
     #chatMessages {
@@ -401,7 +400,6 @@
       background: #3B82F6;
     }
 
-    /* Instructions Modal - full screen */
     #instructionsModal {
       display: none;
       position: fixed;
@@ -502,403 +500,384 @@
   </div>
 </main>
 
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <script>
-    // Force new connection for each client
-    const socket = io({
-      transports: ['websocket', 'polling'],
-      upgrade: true,
-      rememberUpgrade: true,
-      forceNew: true
-    });
-    
-    socket.on('connect', () => {
-      console.log(`[SOCKET] Connected with ID: ${socket.id}`);
-    });
-    
-    socket.on('disconnect', () => {
-      console.log(`[SOCKET] Disconnected`);
-    });
-    
-    const params = new URLSearchParams(location.search);
-    const roomCode = params.get('room');
-    const username = params.get('username');
-    const myChoiceId = parseInt(params.get('choice'));
-    const firstTurn = params.get('turn');
-    
-    console.log(`[GAME] Initializing - Room: ${roomCode}, Username: ${username}, Choice: ${myChoiceId}, FirstTurn: ${firstTurn}`);
-    let selectedCard = null;
-    let isMyTurn = false;
-    let opponentUsername = null;
-    let turnInitialized = false;
-    let myWrongGuesses = 0;
-    let crossedCards = new Set(); // Track crossed cards
-    let roomPlayers = []; // Store all players in room
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+  const socket = io({
+    transports: ['websocket', 'polling'],
+    upgrade: true,
+    rememberUpgrade: true,
+    forceNew: true
+  });
+  
+  socket.on('connect', () => console.log(`[SOCKET] Connected with ID: ${socket.id}`));
+  
+  const params = new URLSearchParams(location.search);
+  const roomCode = params.get('room');
+  const username = params.get('username');
+  const myChoiceId = parseInt(params.get('choice'));
+  const firstTurn = params.get('turn');
+  
+  let selectedCard = null;
+  let isMyTurn = false;
+  let opponentUsername = null;
+  let turnInitialized = false;
+  let myWrongGuesses = 0;
+  let crossedCards = new Set();
+  let roomPlayers = [];
 
-    // Load saved state on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedState = sessionStorage.getItem(`gameState_${roomCode}`);
-      if (savedState) {
-        const state = JSON.parse(savedState);
-        crossedCards = new Set(state.crossedCards || []);
-        myWrongGuesses = state.wrongGuesses || 0;
-        
-        // Restore crossed cards after grid is created
-        setTimeout(() => {
-          crossedCards.forEach(cardId => {
-            const card = document.querySelector(`.game-card[data-id="${cardId}"]`);
-            if (card) card.classList.add('crossed');
-          });
-        }, 100);
-      }
-    });
-
-    // Save state before leaving
-    function saveGameState() {
-      const state = {
-        crossedCards: Array.from(crossedCards),
-        wrongGuesses: myWrongGuesses
-      };
-      sessionStorage.setItem(`gameState_${roomCode}`, JSON.stringify(state));
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedState = sessionStorage.getItem(`gameState_${roomCode}`);
+    if (savedState) {
+      const state = JSON.parse(savedState);
+      crossedCards = new Set(state.crossedCards || []);
+      myWrongGuesses = state.wrongGuesses || 0;
+      
+      setTimeout(() => {
+        crossedCards.forEach(cardId => {
+          const card = document.querySelector(`.game-card[data-id="${cardId}"]`);
+          if (card) card.classList.add('crossed');
+        });
+      }, 100);
     }
+  });
 
-    if (!roomCode || !username || !myChoiceId) {
-      console.error('[GAME] Missing required parameters!', {roomCode, username, myChoiceId});
-      showModal('Error', 'Missing game data. Returning to menu...');
-      setTimeout(() => location.href = '/', 2000);
-    } else {
-      console.log('[GAME] All parameters valid, continuing...');
-    }
+  function saveGameState() {
+    const state = {
+      crossedCards: Array.from(crossedCards),
+      wrongGuesses: myWrongGuesses
+    };
+    sessionStorage.setItem(`gameState_${roomCode}`, JSON.stringify(state));
+  }
 
-    socket.emit('join_game_room', { room_code: roomCode, username });
+  if (!roomCode || !username || !myChoiceId) {
+    showModal('Error', 'Missing game data. Returning to menu...');
+    setTimeout(() => location.href = '/', 2000);
+  }
 
-    // Listen for player list updates
-    socket.on('update_players', players => {
-      roomPlayers = players;
-      opponentUsername = players.find(p => p !== username);
-      console.log(`[GAME] Players in room: ${players}, Opponent: ${opponentUsername}`);
-    });
+  socket.emit('join_game_room', { room_code: roomCode, username });
 
-    const memes = [
-      {id:1, name:"Doubter", img:"/static/img/1.png", color:"yellow"},
-      {id:2, name:"Conspiracy Keanu", img:"/static/img/2.png", color:"red"},
-      {id:3, name:"Mini Keanu", img:"/static/img/3.png", color:"blue"},
-      {id:4, name:"Eye Roll", img:"/static/img/4.png", color:"green"},
-      {id:5, name:"Guard", img:"/static/img/5.png", color:"yellow"},
-      {id:6, name:"Pointing Glasses", img:"/static/img/6.png", color:"red"},
-      {id:7, name:"Looking Guy", img:"/static/img/7.png", color:"blue"},
-      {id:8, name:"Borat Thumbs", img:"/static/img/8.png", color:"green"},
-      {id:9, name:"Confused Woman", img:"/static/img/9.png", color:"yellow"},
-      {id:10, name:"Smirk", img:"/static/img/10.png", color:"red"},
-      {id:11, name:"Roll Safe", img:"/static/img/11.png", color:"blue"},
-      {id:12, name:"Gandalf", img:"/static/img/12.png", color:"green"},
-      {id:13, name:"Sad Affleck", img:"/static/img/13.png", color:"yellow"},
-      {id:14, name:"Tada Man", img:"/static/img/14.png", color:"red"},
-      {id:15, name:"Confused Gandalf", img:"/static/img/15.png", color:"blue"}
-    ];
+  socket.on('update_players', players => {
+    roomPlayers = players;
+    opponentUsername = players.find(p => p !== username);
+  });
 
-    function showModal(title, message, isConfirm = false) {
-      return new Promise((resolve) => {
-        const modal = document.getElementById('gameModal');
-        const titleEl = document.getElementById('modalTitle');
-        const messageEl = document.getElementById('modalMessage');
-        const buttonsEl = document.getElementById('modalButtons');
-        
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        
-        if (isConfirm) {
-          buttonsEl.innerHTML = `
-            <button class="btn-primary" onclick="confirmModal(true)">Yes</button>
-            <button class="btn-secondary" onclick="confirmModal(false)">No</button>
-          `;
-          window.modalConfirmResolve = resolve;
-        } else {
-          buttonsEl.innerHTML = '<button class="btn-primary" onclick="closeModal()">OK</button>';
-          window.modalResolve = resolve;
-        }
-        
-        modal.style.display = 'flex';
-      });
-    }
+  const memes = [
+    {id:1, name:"Doubter", img:"/static/img/1.png", color:"yellow"},
+    {id:2, name:"Conspiracy Keanu", img:"/static/img/2.png", color:"red"},
+    {id:3, name:"Mini Keanu", img:"/static/img/3.png", color:"blue"},
+    {id:4, name:"Eye Roll", img:"/static/img/4.png", color:"green"},
+    {id:5, name:"Guard", img:"/static/img/5.png", color:"yellow"},
+    {id:6, name:"Pointing Glasses", img:"/static/img/6.png", color:"red"},
+    {id:7, name:"Looking Guy", img:"/static/img/7.png", color:"blue"},
+    {id:8, name:"Borat Thumbs", img:"/static/img/8.png", color:"green"},
+    {id:9, name:"Confused Woman", img:"/static/img/9.png", color:"yellow"},
+    {id:10, name:"Smirk", img:"/static/img/10.png", color:"red"},
+    {id:11, name:"Roll Safe", img:"/static/img/11.png", color:"blue"},
+    {id:12, name:"Gandalf", img:"/static/img/12.png", color:"green"},
+    {id:13, name:"Sad Affleck", img:"/static/img/13.png", color:"yellow"},
+    {id:14, name:"Tada Man", img:"/static/img/14.png", color:"red"},
+    {id:15, name:"Confused Gandalf", img:"/static/img/15.png", color:"blue"}
+  ];
 
-    function closeModal() {
-      document.getElementById('gameModal').style.display = 'none';
-      if (window.modalResolve) {
-        window.modalResolve();
-        window.modalResolve = null;
-      }
-    }
-
-    function confirmModal(result) {
-      document.getElementById('gameModal').style.display = 'none';
-      if (window.modalConfirmResolve) {
-        window.modalConfirmResolve(result);
-        window.modalConfirmResolve = null;
-      }
-    }
-
-    window.onclick = (event) => {
+  function showModal(title, message, isConfirm = false) {
+    return new Promise((resolve) => {
       const modal = document.getElementById('gameModal');
-      if (event.target === modal) closeModal();
+      const titleEl = document.getElementById('modalTitle');
+      const messageEl = document.getElementById('modalMessage');
+      const buttonsEl = document.getElementById('modalButtons');
+      
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      
+      if (isConfirm) {
+        buttonsEl.innerHTML = `
+          <button class="btn-primary" onclick="confirmModal(true)">Yes</button>
+          <button class="btn-secondary" onclick="confirmModal(false)">No</button>
+        `;
+        window.modalConfirmResolve = resolve;
+      } else {
+        buttonsEl.innerHTML = '<button class="btn-primary" onclick="closeModal()">OK</button>';
+        window.modalResolve = resolve;
+      }
+      
+      modal.style.display = 'flex';
+    });
+  }
+
+  function closeModal() {
+    document.getElementById('gameModal').style.display = 'none';
+    if (window.modalResolve) {
+      window.modalResolve();
+      window.modalResolve = null;
+    }
+  }
+
+  function confirmModal(result) {
+    document.getElementById('gameModal').style.display = 'none';
+    if (window.modalConfirmResolve) {
+      window.modalConfirmResolve(result);
+      window.modalConfirmResolve = null;
+    }
+  }
+
+  window.onclick = (event) => {
+    const modal = document.getElementById('gameModal');
+    if (event.target === modal) closeModal();
+  };
+
+  function openInstructions() {
+    saveGameState();
+    const modal = document.getElementById('instructionsModal');
+    const iframe = document.getElementById('instructionsFrame');
+    iframe.src = '/instructions';
+    modal.classList.add('active');
+  }
+
+  function closeInstructions() {
+    const modal = document.getElementById('instructionsModal');
+    modal.classList.remove('active');
+    document.getElementById('instructionsFrame').src = '';
+  }
+
+  const myMeme = memes.find(m => m.id === myChoiceId);
+  if (myMeme) {
+    document.getElementById('yourCardImg').src = myMeme.img;
+    document.getElementById('yourCardName').textContent = myMeme.name;
+    document.getElementById('yourCardBg').className = `card-bg bg-${myMeme.color}`;
+  }
+
+  const grid = document.getElementById('gameGrid');
+  memes.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.dataset.id = m.id;
+    card.innerHTML = `
+      <div class="card-bg bg-${m.color}"></div>
+      <img src="${m.img}" alt="${m.name}"/>
+      <div class="card-name">${m.name}</div>
+    `;
+
+    card.ondblclick = (e) => {
+      e.stopPropagation();
+      card.classList.toggle('crossed');
+      
+      const cardId = parseInt(card.dataset.id);
+      if (card.classList.contains('crossed')) {
+        crossedCards.add(cardId);
+      } else {
+        crossedCards.delete(cardId);
+      }
+      saveGameState();
+      
+      if (card.classList.contains('selected')) {
+        card.classList.remove('selected');
+        selectedCard = null;
+      }
     };
 
-    function openInstructions() {
-      saveGameState();
-      const modal = document.getElementById('instructionsModal');
-      const iframe = document.getElementById('instructionsFrame');
-      iframe.src = '/instructions';
-      modal.classList.add('active');
-    }
-
-    function closeInstructions() {
-      const modal = document.getElementById('instructionsModal');
-      modal.classList.remove('active');
-      document.getElementById('instructionsFrame').src = '';
-    }
-
-    const myMeme = memes.find(m => m.id === myChoiceId);
-    if (myMeme) {
-      document.getElementById('yourCardImg').src = myMeme.img;
-      document.getElementById('yourCardName').textContent = myMeme.name;
-      document.getElementById('yourCardBg').className = `card-bg bg-${myMeme.color}`;
-    }
-
-    const grid = document.getElementById('gameGrid');
-    memes.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'game-card';
-      card.dataset.id = m.id;
-      card.innerHTML = `
-        <div class="card-bg bg-${m.color}"></div>
-        <img src="${m.img}" alt="${m.name}"/>
-        <div class="card-name">${m.name}</div>
-      `;
-
-      card.ondblclick = (e) => {
-        e.stopPropagation();
-        card.classList.toggle('crossed');
-        
-        // Update tracked crossed cards
-        const cardId = parseInt(card.dataset.id);
-        if (card.classList.contains('crossed')) {
-          crossedCards.add(cardId);
-        } else {
-          crossedCards.delete(cardId);
-        }
-        saveGameState();
-        
-        if (card.classList.contains('selected')) {
-          card.classList.remove('selected');
-          selectedCard = null;
-        }
-      };
-
-      card.onclick = () => {
-        if (!isMyTurn) return;
-        
-        if (card.classList.contains('selected')) {
-          card.classList.remove('selected');
-          selectedCard = null;
-          return;
-        }
-
-        document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
-        
-        if (!card.classList.contains('crossed')) {
-          card.classList.add('selected');
-          selectedCard = parseInt(card.dataset.id);
-        }
-      };
-
-      grid.appendChild(card);
-    });
-
-    const guessBtn = document.querySelector('#guessBtn button');
-    const resetBtn = document.querySelector('#resetBtn button');
-    const skipBtn = document.querySelector('#skipBtn button');
-    const chatInput = document.getElementById('chatInput');
-
-    function updateTurnUI(myTurnNow) {
-        isMyTurn = myTurnNow;
-        const indicator = document.getElementById('turnIndicator');
-        indicator.textContent = isMyTurn ? 'Your turn.' : "Opponent's turn.";
-        
-        console.log(`[TURN] Turn updated - isMyTurn: ${isMyTurn}, Username: ${username}`);
-
-        guessBtn.disabled = !isMyTurn;
-        skipBtn.disabled = !isMyTurn;
-
-        if (!isMyTurn) {
-            document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
-            selectedCard = null;
-        }
-    }
-
-    if (firstTurn) {
-      const myTurnNow = firstTurn === username;
-      console.log(`[TURN] Initial turn setup - firstTurn: ${firstTurn}, myTurnNow: ${myTurnNow}`);
-      updateTurnUI(myTurnNow);
-      turnInitialized = true;
-    }
-
-    socket.on('turn_update', data => {
-      console.log(`[TURN] Received turn_update - current_turn: ${data.current_turn}, my username: ${username}`);
-      const myTurnNow = data.current_turn === username;
-      updateTurnUI(myTurnNow);
-    });
-
-    setTimeout(() => {
-      if (!turnInitialized) {
-        console.log(`[TURN] Turn not initialized, requesting update from server`);
-        socket.emit('request_turn_update', { room_code: roomCode });
-      }
-    }, 500);
-
-    guessBtn.onclick = async () => {
-      if (!isMyTurn) {
-        await showModal('Not Your Turn', "Wait for your turn!");
-        return;
-      }
-      if (!selectedCard) {
-        await showModal('No Selection', "Select a card first by clicking on it!");
-        return;
-      }
-
-      guessBtn.disabled = true;
-      skipBtn.disabled = true;
-
-      socket.emit('make_guess', { room_code: roomCode, username, guessed_id: selectedCard });
+    card.onclick = () => {
+      if (!isMyTurn) return;
       
+      if (card.classList.contains('selected')) {
+        card.classList.remove('selected');
+        selectedCard = null;
+        return;
+      }
+
+      document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+      
+      if (!card.classList.contains('crossed')) {
+        card.classList.add('selected');
+        selectedCard = parseInt(card.dataset.id);
+      }
+    };
+
+    grid.appendChild(card);
+  });
+
+  const guessBtn = document.querySelector('#guessBtn button');
+  const resetBtn = document.querySelector('#resetBtn button');
+  const skipBtn = document.querySelector('#skipBtn button');
+
+  function updateTurnUI(myTurnNow) {
+    isMyTurn = myTurnNow;
+    const indicator = document.getElementById('turnIndicator');
+    indicator.textContent = isMyTurn ? 'Your turn.' : "Opponent's turn.";
+    
+    guessBtn.disabled = !isMyTurn;
+    skipBtn.disabled = !isMyTurn;
+
+    if (!isMyTurn) {
       document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
       selectedCard = null;
-    };
+    }
+  }
 
-    skipBtn.onclick = async () => {
-      if (!isMyTurn) {
-        await showModal('Not Your Turn', "Wait for your turn!");
-        return;
-      }
-      
-      const confirmed = await showModal('Skip Turn?', 'Pass your turn to the opponent?', true);
-      if (confirmed) {
-        socket.emit('skip_turn', { room_code: roomCode, username });
-        document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
-        selectedCard = null;
-        guessBtn.disabled = true;
-        skipBtn.disabled = true;
-      }
-    };
+  if (firstTurn) {
+    updateTurnUI(firstTurn === username);
+    turnInitialized = true;
+  }
 
-    resetBtn.onclick = () => {
-      document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
-      crossedCards.clear();
-      saveGameState();
-    };
+  socket.on('turn_update', data => {
+    updateTurnUI(data.current_turn === username);
+    turnInitialized = true;
+  });
 
-    socket.on('question_rejected', data => {
-      const div = document.createElement('div');
-      div.className = 'msg error';
-      div.textContent = `❌ ${data.reason}`;
-      document.getElementById('chatMessages').appendChild(div);
-      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-    });
+  setTimeout(() => {
+    if (!turnInitialized) {
+      socket.emit('request_turn_update', { room_code: roomCode });
+    }
+  }, 1000);
 
-    socket.on('chat_message', data => {
-      const div = document.createElement('div');
-      if (data.username === 'System') {
-        div.className = 'msg system';
-        div.textContent = `💬 ${data.message}`;
-      } else {
-        const isMe = data.username === username;
-        div.className = `msg ${isMe ? 'you' : 'opponent'}`;
-        const sender = isMe ? "You" : "Opponent";
-        div.textContent = `${sender}: ${data.message}`;
-      }
-      const chatMessages = document.getElementById('chatMessages');
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-
-    document.getElementById('messageForm').onsubmit = e => {
-      e.preventDefault();
-      if (!chatInput.value.trim()) return;
-      socket.emit('chat_message', { 
-        room_code: roomCode, 
-        username, 
-        message: chatInput.value.trim() 
-      });
-      chatInput.value = '';
-    };
-
-    socket.on('guess_result', async data => {
-        if (data.success) {
-            const winner = data.guesser === username ? "You" : "Opponent";
-            await showModal('Victory!', `Correct! ${winner} wins! It was ${data.correct_meme_name}`);
-        } else {
-            if (data.guesser === username && data.guessed_id) {
-                const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
-                if (wrongCard && !wrongCard.classList.contains('crossed')) {
-                    wrongCard.classList.add('crossed');
-                    crossedCards.add(data.guessed_id);
-                    saveGameState();
-                }
-                myWrongGuesses++;
-                await showModal('Wrong Guess', `Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
-            } else {
-                await showModal('Wrong Guess', `Wrong guess by Opponent!`);
-            }
-        }
-    });
-
-    socket.on('game_over', async data => {
-      let message = '';
-      const winnerIsMe = data.winner === username;
-      const winnerName = winnerIsMe ? "You" : "Opponent";
-      const verb = winnerIsMe ? "win" : "wins";
-
-      if (data.reason === 'surrender') {
-        message = `${winnerName} ${verb}! Opponent surrendered.`;
-      } else if (data.reason === 'too_many_wrong_guesses') {
-        message = `${winnerName} ${verb}! Opponent made 3 wrong guesses.`;
-      } else if (data.correct_meme_name) {
-        message = `${winnerName} ${verb}! It was ${data.correct_meme_name}`;
-      } else {
-        message = `${winnerName} ${verb}!`;
-      }
-      
-      await showModal('Game Over', message);
-
-      // Clear saved state
-      sessionStorage.removeItem(`gameState_${roomCode}`);
-
-      // Both players go to result page with winner info
-      setTimeout(() => {
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
-      }, 1000);
-    });
-
-    async function surrenderGame() {
-      const confirmed = await showModal('Surrender?', 'Give up and lose the game?', true);
-      if (confirmed) {
-        // Get opponent's actual username
-        const opponent = opponentUsername || 'Opponent';
-        
-        socket.emit('surrender', { room_code: roomCode, username });
-        sessionStorage.removeItem(`gameState_${roomCode}`);
-        
-        // Navigate to result page as loser
-        location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(opponent)}`;
-      }
+  guessBtn.onclick = () => {
+    if (!isMyTurn) {
+      addSystemMessage("⏳ Wait for your turn!");
+      return;
+    }
+    if (!selectedCard) {
+      addSystemMessage("⚠️ Select a card first by clicking on it!");
+      return;
     }
 
-    socket.on('player_disconnected', async data => {
-      await showModal('Player Disconnected', `${opponent} disconnected. You win by default!`);
-      sessionStorage.removeItem(`gameState_${roomCode}`);
-      
-      // Navigate to result page as winner
-      location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(username)}`;
+    guessBtn.disabled = true;
+    skipBtn.disabled = true;
+
+    socket.emit('make_guess', { room_code: roomCode, username, guessed_id: selectedCard });
+    
+    document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+    selectedCard = null;
+  };
+
+  skipBtn.onclick = async () => {
+    if (!isMyTurn) {
+      addSystemMessage("⏳ Wait for your turn!");
+      return;
+    }
+    
+    const confirmed = await showModal('Skip Turn?', 'Pass your turn to the opponent?', true);
+    if (confirmed) {
+      socket.emit('skip_turn', { room_code: roomCode, username });
+      document.querySelectorAll('.game-card.selected').forEach(c => c.classList.remove('selected'));
+      selectedCard = null;
+      guessBtn.disabled = true;
+      skipBtn.disabled = true;
+    }
+  };
+
+  resetBtn.onclick = () => {
+    document.querySelectorAll('.game-card.crossed').forEach(c => c.classList.remove('crossed'));
+    crossedCards.clear();
+    saveGameState();
+  };
+
+  socket.on('question_rejected', data => {
+    const div = document.createElement('div');
+    div.className = 'msg error';
+    div.textContent = `❌ ${data.reason}`;
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+  });
+
+  socket.on('chat_message', data => {
+    const div = document.createElement('div');
+    if (data.username === 'System') {
+      div.className = 'msg system';
+      div.textContent = `💬 ${data.message}`;
+    } else {
+      const isMe = data.username === username;
+      div.className = `msg ${isMe ? 'you' : 'opponent'}`;
+      const sender = isMe ? "You" : "Opponent";
+      div.textContent = `${sender}: ${data.message}`;
+    }
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+
+  document.getElementById('messageForm').onsubmit = e => {
+    e.preventDefault();
+    if (!document.getElementById('chatInput').value.trim()) return;
+    socket.emit('chat_message', { 
+      room_code: roomCode, 
+      username, 
+      message: document.getElementById('chatInput').value.trim() 
     });
-  </script>
+    document.getElementById('chatInput').value = '';
+  };
+
+  // FIXED: Only show victory modal to the winner
+  socket.on('guess_result', async data => {
+    // ONLY show modal if we're the guesser AND we won
+    if (data.success && data.guesser === username) {
+      await showModal('Victory!', `Correct! You win! It was ${data.correct_meme_name}`);
+    } 
+    // Show error only if we're the guesser AND we lost
+    else if (!data.success && data.guesser === username) {
+      const wrongCard = document.querySelector(`.game-card[data-id="${data.guessed_id}"]`);
+      if (wrongCard && !wrongCard.classList.contains('crossed')) {
+        wrongCard.classList.add('crossed');
+        crossedCards.add(data.guessed_id);
+        saveGameState();
+      }
+      myWrongGuesses++;
+      addSystemMessage(`❌ Wrong guess! You have ${3 - myWrongGuesses} guesses left.`);
+    } 
+    // If opponent guessed wrong, just show system message
+    else if (!data.success && data.guesser !== username) {
+      addSystemMessage(`❌ Wrong guess by Opponent!`);
+    }
+    // If opponent guessed correctly, don't show anything - wait for game_over event
+  });
+
+  socket.on('game_over', async data => {
+    let message = '';
+    const winnerIsMe = data.winner === username;
+    const winnerName = winnerIsMe ? "You" : "Opponent";
+    const verb = winnerIsMe ? "win" : "wins";
+
+    if (data.reason === 'surrender') {
+      message = `${winnerName} ${verb}! Opponent surrendered.`;
+    } else if (data.reason === 'too_many_wrong_guesses') {
+      message = `${winnerName} ${verb}! Opponent made 3 wrong guesses.`;
+    } else if (data.correct_meme_name) {
+      message = `${winnerName} ${verb}! It was ${data.correct_meme_name}`;
+    } else {
+      message = `${winnerName} ${verb}!`;
+    }
+    
+    await showModal('Game Over', message);
+
+    sessionStorage.removeItem(`gameState_${roomCode}`);
+
+    setTimeout(() => {
+      location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(data.winner)}`;
+    }, 1000);
+  });
+
+  async function surrenderGame() {
+    const confirmed = await showModal('Surrender?', 'Give up and lose the game?', true);
+    if (confirmed) {
+      const opponent = opponentUsername || 'Opponent';
+      socket.emit('surrender', { room_code: roomCode, username });
+      sessionStorage.removeItem(`gameState_${roomCode}`);
+      location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(opponent)}`;
+    }
+  }
+
+  socket.on('player_disconnected', async data => {
+    await showModal('Player Disconnected', `Opponent disconnected. You win by default!`);
+    sessionStorage.removeItem(`gameState_${roomCode}`);
+    location.href = `/result.html?room=${roomCode}&username=${encodeURIComponent(username)}&winner=${encodeURIComponent(username)}`;
+  });
+
+  function addSystemMessage(message) {
+    const div = document.createElement('div');
+    div.className = 'msg system';
+    div.textContent = `💬 ${message}`;
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+</script>
 </body>
 </html>

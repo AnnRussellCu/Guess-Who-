@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
 from threading import Timer, Lock
@@ -9,38 +9,36 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# { room_code: [player1, player2] }
-rooms = {}
+rooms = {} # { room_code: [player1, player2] }
 
-# { room_code: { sid: {username, choice} } }
-player_choices = {}
+player_choices = {} # { room_code: { sid: {username, choice} } }
 
 # { room_code: Timer }
 active_timers = {}
 timer_lock = Lock()
 
-# { room_code: set() }
-ready_players = {}
+ready_players = {} # { room_code: set() }
 
-# { room_code: username }
-current_turns = {}
+current_turns = {} # { room_code: username }
 
-# username -> sid
-player_sids = {}
+player_sids = {} # username -> sid
 
-# { room_code: { username: count } }
-wrong_guesses = {}
+wrong_guesses = {} # { room_code: { username: count } }
 
-sid_to_username = {}
+sid_to_username = {} # sid -> username
 
+sid_to_room = {} # sid -> room_code
+
+# Track players in result phase (don't trigger disconnect for them)
+in_result_phase = {}  # { room_code: set(usernames) }
 
 # ---------------------
 # QUESTION FILTERING
 # ---------------------
-
 BANNED_WORDS = [
     'red', 'blue', 'green', 'yellow',
     'color', 'colour', 'colored', 'coloured',
+    'top', 'left', 'right', 'bottom',
     'top left', 'top right', 'bottom left', 'bottom right',
     'first row', 'second row', 'third row',
     'first column', 'second column', 'third column', 'fourth column', 'fifth column',
@@ -78,11 +76,9 @@ def filter_question(message):
     
     return True, ""
 
-
 # ---------------------
 # ROUTES
 # ---------------------
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -118,6 +114,11 @@ def result_page():
     if not room_code or not username:
         return "Missing parameters", 400
     
+    # Mark player as in result phase
+    if room_code not in in_result_phase:
+        in_result_phase[room_code] = set()
+    in_result_phase[room_code].add(username)
+    
     if room_code in rooms and username not in rooms[room_code]:
         rooms[room_code].append(username)
         print(f"[RESULT] Re-added {username} to room {room_code}")
@@ -128,11 +129,9 @@ def result_page():
 def instructions_page():
     return render_template('instructions.html')
 
-
 # ---------------------
 # ROOM CREATION / JOIN
 # ---------------------
-
 @socketio.on('create_room')
 def handle_create_room(data):
     username = data['username']
@@ -147,12 +146,13 @@ def handle_create_room(data):
 
     try:
         player_sids[username] = request.sid
+        sid_to_username[request.sid] = username
+        sid_to_room[request.sid] = room_code
     except Exception:
         pass
 
     emit('room_created', room_code)
     emit('update_players', rooms[room_code], room=room_code)
-
 
 @socketio.on('join_room_event')
 def handle_join_room(data):
@@ -174,12 +174,13 @@ def handle_join_room(data):
 
     try:
         player_sids[username] = request.sid
+        sid_to_username[request.sid] = username
+        sid_to_room[request.sid] = room_code
     except Exception:
         pass
 
     emit('update_players', rooms[room_code], room=room_code)
     emit('join_result', {'success': True, 'host': rooms[room_code][0]}, to=request.sid)
-
 
 @socketio.on('join_game_room')
 def handle_join_game_room(data):
@@ -187,6 +188,7 @@ def handle_join_game_room(data):
     username = data['username']
 
     sid_to_username[request.sid] = username
+    sid_to_room[request.sid] = room_code
     print(f"[JOIN] {username} (SID: {request.sid}) joining game room {room_code}")
     join_room(room_code)
     
@@ -210,14 +212,24 @@ def handle_join_result_room(data):
     room_code = data['room_code']
     username = data['username']
     
-    print(f"[RESULT] {username} joining result room {room_code}")
+    print(f"[RESULT] {username} (SID: {request.sid}) joining result room {room_code}")
     join_room(room_code)
+    
+    # Mark as in result phase
+    if room_code not in in_result_phase:
+        in_result_phase[room_code] = set()
+    in_result_phase[room_code].add(username)
     
     try:
         player_sids[username] = request.sid
+        sid_to_username[request.sid] = username
+        sid_to_room[request.sid] = room_code
     except Exception:
         pass
-
+    
+    if room_code in rooms:
+        print(f"[RESULT] Sending player list to {username}: {rooms[room_code]}")
+        emit('update_players', rooms[room_code], room=room_code)
 
 # ---------------------
 # CHOOSE TIMER
@@ -238,11 +250,9 @@ def start_choose_timer(room_code):
         timer.start()
         active_timers[room_code] = timer
 
-
 # ---------------------
 # GAME START → CHOOSE PHASE
 # ---------------------
-
 @socketio.on('start_game')
 def handle_start_game(data):
     room_code = data.get('room_code')
@@ -262,11 +272,9 @@ def handle_start_game(data):
             'username': player
         }, room=room_code)
 
-
 # ---------------------
 # PLAYER READY (FOR REMATCH)
 # ---------------------
-
 @socketio.on('player_ready')
 def handle_player_ready(data):
     room_code = data.get('room_code')
@@ -298,6 +306,8 @@ def handle_player_ready(data):
             del wrong_guesses[room_code]
         if room_code in current_turns:
             del current_turns[room_code]
+        if room_code in in_result_phase:
+            del in_result_phase[room_code]
         
         ready_players[room_code] = set()
         
@@ -308,11 +318,9 @@ def handle_player_ready(data):
             'username': 'placeholder'
         }, room=room_code)
 
-
 # ---------------------
 # PLAYER PICK
 # ---------------------
-
 @socketio.on('player_chose')
 def player_chose(data):
     room = data['room_code']
@@ -351,11 +359,9 @@ def player_chose(data):
                 del active_timers[room]
         finish_choose_phase(room)
 
-
 # ---------------------
 # FINISH CHOOSE PHASE
 # ---------------------
-
 def finish_choose_phase(room_code):
     print(f"\n[FINISH] ========== FINISHING CHOOSE PHASE ==========")
     print(f"[FINISH] Room: {room_code}")
@@ -437,11 +443,9 @@ def finish_choose_phase(room_code):
     
     print(f"[FINISH] ========== CHOOSE PHASE COMPLETE ==========\n")
 
-
 # ---------------------
 # CHAT (GAMEPLAY + RESULT)
 # ---------------------
-
 @socketio.on('chat_message')
 def handle_chat_message(data):
     room_code = data.get('room_code')
@@ -449,13 +453,16 @@ def handle_chat_message(data):
     message = data.get('message')
     
     if not all([room_code, username, message]):
+        print(f"[CHAT] Missing data: room={room_code}, user={username}, msg={message}")
         return
     
     if room_code not in rooms:
+        print(f"[CHAT] Room {room_code} not found in rooms")
         return
     
     print(f"[CHAT] {username} in {room_code}: {message}")
     
+    # Only filter questions during gameplay (when there's a turn system)
     if room_code in current_turns and current_turns.get(room_code) == username:
         is_valid, error_message = filter_question(message)
         if not is_valid:
@@ -463,16 +470,16 @@ def handle_chat_message(data):
             print(f"[CHAT] Question rejected: {error_message}")
             return
     
-    emit('chat_message', {
+    # Broadcast message to all players in room
+    socketio.emit('chat_message', {
         'username': username,
         'message': message
     }, room=room_code)
-
+    print(f"[CHAT] Message broadcasted to room {room_code}")
 
 # ---------------------
 # GAMEPLAY - GUESSES & TURNS
 # ---------------------
-
 @socketio.on('make_guess')
 def handle_make_guess(data):
     room_code = data['room_code']
@@ -496,13 +503,33 @@ def handle_make_guess(data):
     if guessed_id == opponent_choice:
         print(f"[GUESS] ✅ Correct! {username} wins!")
         
-        socketio.emit('guess_result', {
-            'success': True,
-            'guesser': username,
-            'guessed_id': guessed_id,
-            'correct_meme_name': get_meme_name(opponent_choice)
-        }, room=room_code)
+        # Mark both players as in result phase
+        if room_code not in in_result_phase:
+            in_result_phase[room_code] = set()
+        in_result_phase[room_code].add(username)
+        in_result_phase[room_code].add(opponent)
         
+        # Send to guesser
+        guesser_sid = player_sids.get(username)
+        if guesser_sid:
+            socketio.emit('guess_result', {
+                'success': True,
+                'guesser': username,
+                'guessed_id': guessed_id,
+                'correct_meme_name': get_meme_name(opponent_choice)
+            }, to=guesser_sid)
+        
+        # Send to opponent
+        opponent_sid = player_sids.get(opponent)
+        if opponent_sid:
+            socketio.emit('guess_result', {
+                'success': False,
+                'guesser': username,
+                'guessed_id': guessed_id,
+                'correct_meme_name': get_meme_name(opponent_choice)
+            }, to=opponent_sid)
+        
+        # Send game over to both
         game_over_data = {
             'winner': username,
             'loser': opponent,
@@ -510,8 +537,7 @@ def handle_make_guess(data):
             'correct_meme_name': get_meme_name(opponent_choice)
         }
         
-        socketio.emit('game_over', game_over_data, room=room_code)
-        for player in rooms[room_code]:
+        for player in [username, opponent]:
             player_sid = player_sids.get(player)
             if player_sid:
                 socketio.emit('game_over', game_over_data, to=player_sid)
@@ -533,14 +559,19 @@ def handle_make_guess(data):
         if wrong_count >= 3:
             print(f"[GUESS] 🏁 {username} lost! 3 wrong guesses")
             
+            # Mark both players as in result phase
+            if room_code not in in_result_phase:
+                in_result_phase[room_code] = set()
+            in_result_phase[room_code].add(username)
+            in_result_phase[room_code].add(opponent)
+            
             game_over_data = {
                 'winner': opponent,
                 'loser': username,
                 'reason': 'too_many_wrong_guesses'
             }
             
-            socketio.emit('game_over', game_over_data, room=room_code)
-            for player in rooms[room_code]:
+            for player in [username, opponent]:
                 player_sid = player_sids.get(player)
                 if player_sid:
                     socketio.emit('game_over', game_over_data, to=player_sid)
@@ -550,7 +581,6 @@ def handle_make_guess(data):
         socketio.emit('turn_update', {
             'current_turn': current_turns[room_code]
         }, room=room_code)
-
 
 @socketio.on('request_turn_update')
 def handle_request_turn_update(data):
@@ -564,7 +594,6 @@ def handle_request_turn_update(data):
         if room_code in rooms and len(rooms[room_code]) > 0:
             current_turns[room_code] = rooms[room_code][0]
             emit('turn_update', {'current_turn': current_turns[room_code]}, to=request.sid)
-
 
 @socketio.on('skip_turn')
 def handle_skip_turn(data):
@@ -580,9 +609,8 @@ def handle_skip_turn(data):
         socketio.emit('turn_update', {'current_turn': opponent}, room=room_code)
         socketio.emit('chat_message', {
             'username': 'System',
-            'message': f'{opponent} skipped their turn'
+            'message': f'{username} skipped a turn'
         }, room=room_code)
-
 
 @socketio.on('surrender')
 def handle_surrender(data):
@@ -591,25 +619,31 @@ def handle_surrender(data):
     
     opponent = next((p for p in rooms[room_code] if p != username), None)
     if opponent:
+        # Mark both as in result phase
+        if room_code not in in_result_phase:
+            in_result_phase[room_code] = set()
+        in_result_phase[room_code].add(username)
+        in_result_phase[room_code].add(opponent)
+        
         game_over_data = {
             'winner': opponent,
             'loser': username,
             'reason': 'surrender'
         }
-        socketio.emit('game_over', game_over_data, room=room_code)
+        
         opponent_sid = player_sids.get(opponent)
         if opponent_sid:
             socketio.emit('game_over', game_over_data, to=opponent_sid)
 
-
 # ---------------------
 # LEAVE GAME
 # ---------------------
-
 @socketio.on('leave_game')
 def handle_leave_game(data):
     room_code = data['room_code']
     username = data['username']
+    
+    print(f"[LEAVE] {username} leaving room {room_code}")
     
     if room_code in rooms and username in rooms[room_code]:
         rooms[room_code].remove(username)
@@ -617,45 +651,73 @@ def handle_leave_game(data):
         if username in player_sids:
             del player_sids[username]
         
+        # Notify other players
+        if len(rooms[room_code]) > 0:
+            print(f"[LEAVE] Notifying remaining players in {room_code}")
+            socketio.emit('player_disconnected', {'username': username}, room=room_code, skip_sid=request.sid)
+            emit('update_players', rooms[room_code], room=room_code)
+        
+        # Clean up if room is empty
         if len(rooms[room_code]) == 0:
-            for d in [rooms, player_choices, ready_players, current_turns, wrong_guesses]:
+            for d in [rooms, player_choices, ready_players, current_turns, wrong_guesses, in_result_phase]:
                 d.pop(room_code, None)
             print(f"[LEAVE] Room {room_code} cleaned up")
-        else:
-            emit('update_players', rooms[room_code], room=room_code)
-            socketio.emit('player_disconnected', {'username': username}, room=room_code)
-
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print(f"[DISCONNECT] Client disconnected: {request.sid}")
     
-    disconnected_username = next((u for u, s in player_sids.items() if s == request.sid), None)
+    disconnected_username = sid_to_username.get(request.sid)
+    room_code = sid_to_room.get(request.sid)
     
-    if disconnected_username:
-        for room_code, players in list(rooms.items()):
-            if disconnected_username in players:
-                remaining_player = next((p for p in players if p != disconnected_username), None)
-                
-                if remaining_player:
-                    game_over_data = {
-                        'winner': remaining_player,
-                        'loser': disconnected_username,
-                        'reason': 'disconnect'
-                    }
-                    socketio.emit('game_over', game_over_data, room=room_code)
-                    remaining_sid = player_sids.get(remaining_player)
-                    if remaining_sid:
-                        socketio.emit('game_over', game_over_data, to=remaining_sid)
-                
-                socketio.emit('player_disconnected', {'username': disconnected_username}, room=room_code)
-                break
-
+    print(f"[DISCONNECT] Username: {disconnected_username}, Room: {room_code}")
+    
+    # Check if player is in result phase (don't trigger disconnect)
+    if room_code and room_code in in_result_phase:
+        if disconnected_username in in_result_phase[room_code]:
+            print(f"[DISCONNECT] {disconnected_username} is in result phase, ignoring disconnect")
+            # Cleanup mappings but don't notify
+            if request.sid in sid_to_username:
+                del sid_to_username[request.sid]
+            if request.sid in sid_to_room:
+                del sid_to_room[request.sid]
+            return
+    
+    if disconnected_username and room_code:
+        if room_code in rooms and disconnected_username in rooms[room_code]:
+            remaining_players = [p for p in rooms[room_code] if p != disconnected_username]
+            
+            print(f"[DISCONNECT] Notifying remaining players: {remaining_players}")
+            
+            # Notify remaining players (skip the disconnected sid)
+            for remaining_player in remaining_players:
+                remaining_sid = player_sids.get(remaining_player)
+                if remaining_sid and remaining_sid != request.sid:
+                    socketio.emit('player_disconnected', {
+                        'username': disconnected_username
+                    }, to=remaining_sid)
+            
+            # If this was during gameplay, trigger game over
+            if remaining_players and room_code in current_turns:
+                remaining_player = remaining_players[0]
+                game_over_data = {
+                    'winner': remaining_player,
+                    'loser': disconnected_username,
+                    'reason': 'disconnect'
+                }
+                remaining_sid = player_sids.get(remaining_player)
+                if remaining_sid:
+                    socketio.emit('game_over', game_over_data, to=remaining_sid)
+    
+    # Cleanup
+    if request.sid in sid_to_username:
+        del sid_to_username[request.sid]
+    if request.sid in sid_to_room:
+        del sid_to_room[request.sid]
 
 # ---------------------
 # HELPER
 # ---------------------
-
 def get_meme_name(meme_id):
     memes = {
         1: "Doubter", 2: "Conspiracy Keanu", 3: "Mini Keanu", 4: "Eye Roll",
